@@ -27,6 +27,4 @@
 
 2. 基于 requests.get 实现了从互联网及本地加载背景图片.
     
-# Example
-    
-    因为 [ Office Tool Plus ] (https://otp.landian.vip) 的 GUI 真的挺棒的
+
