@@ -29,4 +29,4 @@
     
 # Example
     
-    因为 [Office Tool Plus](https://otp.landian.vip) 的 GUI 真的挺棒的
+    因为 [ Office Tool Plus ] (https://otp.landian.vip) 的 GUI 真的挺棒的
