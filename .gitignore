@@ -2,7 +2,7 @@
 __pycache__
 build
 dist
-oc_pytools.egg-info
+*.egg-info/
 
 *.log*
 *.local

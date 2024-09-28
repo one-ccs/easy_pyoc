@@ -2,13 +2,18 @@
 # -*- coding: utf-8 -*-
 from setuptools import setup, find_packages
 
+with open('README.md', 'r', encoding='utf-8') as f:
+    LONG_DESCRIPTION = f.read()
+
 setup(
-    name='oc_pytools',
-    version='0.1.0',
+    name='easy_pyoc',
+    version='0.1.2',
     description='封装一些 Python 组件',
+    long_description=LONG_DESCRIPTION,
+    long_description_content_type='text/markdown',
     author='one-ccs',
     author_email='one-ccs@foxmail.com',
-    url='https://github.com/one-ccs/oc_pytools',
+    url='https://github.com/one-ccs/easy_pyoc',
     license='MIT',
     classifiers=[
         'Development Status :: 3 - Alpha',
@@ -19,12 +24,13 @@ setup(
     ],
     python_requires='>=3',
     packages=find_packages(),
+    package_dir={},
     package_data={
-        'qt5': ['qt5/res/**'],
+        'easy_pyoc': ['qt5/res/**'],
     },
     exclude_package_data={},
     install_requires=[],
     extras_require={
-        'qt5': ['PyQt5'],
+        'easy_pyoc.qt5': ['PyQt5'],
     },
 )

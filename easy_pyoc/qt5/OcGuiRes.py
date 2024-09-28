@@ -9,7 +9,7 @@
 from PyQt5 import QtCore
 
 
-qss = '''oc_pytools.qss
+qss = '''easy_pyoc.qss
 
 * {
     font-family: "Microsoft YaHei";

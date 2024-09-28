@@ -250,7 +250,7 @@ class OTitleBar(QWidget):
 class OWindow(QMainWindow):
     """这是自定义的窗口"""
 
-    def __init__(self, title='oc_pytools'):
+    def __init__(self, title='easy_pyoc'):
         super().__init__()
         self.setWindowFlags(Qt.FramelessWindowHint)         # 设置为无标题栏
         # ~ self.setAttribute(Qt.WA_TranslucentBackground)  # 设置窗口背景透明
@@ -665,7 +665,7 @@ class OWindow(QMainWindow):
         if default != 'disabled':
             qss = OcGuiRes.qss + qss
 
-        if qss[:8] == 'oc_pytools.qss':
+        if qss[:8] == 'easy_pyoc.qss':
             qss = qss[8:]
             QWidget.setStyleSheet(self, qss)
         elif qss.find('\\') or qss.find('/'):
