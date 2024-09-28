@@ -63,6 +63,9 @@ class ClientSocket:
         return self.__connected
 
     def send(self, data: bytes) -> None:
+        if not self.__connected:
+            self.connect()
+
         try:
             print(f'{self} 发送数据: {data}')
 
@@ -82,12 +85,13 @@ class ClientSocket:
             print(f'{self} 收到数据: {data}')
             return data
         except TimeoutError:
-            return None
+            print(f'{self} 接收超时')
         except OSError as e:
             if e.errno == 10057:
                 print(f'{self} 接收失败连接未建立')
             else:
                 print(f'{self} 接收失败: {e}')
+        return None
 
     def close(self) -> bool:
         if self.__connected:
