@@ -1,7 +1,6 @@
-# pyoc
+# oc_pytools
 
 自定义 Python 包，封装一些功能
-
 
 ## 1、socket
 

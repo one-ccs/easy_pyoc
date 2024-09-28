@@ -24,7 +24,7 @@ from requests import get
 from os.path import exists
 import logging
 
-from PyOc import OcGuiRes
+from . import OcGuiRes
 
 
 __auth__ = 'one-ccs'
@@ -250,7 +250,7 @@ class OTitleBar(QWidget):
 class OWindow(QMainWindow):
     """这是自定义的窗口"""
 
-    def __init__(self, title='PyOc'):
+    def __init__(self, title='oc_pytools'):
         super().__init__()
         self.setWindowFlags(Qt.FramelessWindowHint)         # 设置为无标题栏
         # ~ self.setAttribute(Qt.WA_TranslucentBackground)  # 设置窗口背景透明
@@ -665,7 +665,7 @@ class OWindow(QMainWindow):
         if default != 'disabled':
             qss = OcGuiRes.qss + qss
 
-        if qss[:8] == 'PyOc.qss':
+        if qss[:8] == 'oc_pytools.qss':
             qss = qss[8:]
             QWidget.setStyleSheet(self, qss)
         elif qss.find('\\') or qss.find('/'):
@@ -797,4 +797,3 @@ def set_all_gap(layout, left=0, top=0, right=0, bottom=0, spacing=0):
     layout.setContentsMargins(left, top, right, bottom)
     # 去除布局及控件间的间隔
     layout.setSpacing(spacing)
-

@@ -3,12 +3,12 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='oc-pytools',
+    name='oc_pytools',
     version='0.1.0',
     description='封装一些 Python 组件',
     author='one-ccs',
     author_email='one-ccs@foxmail.com',
-    url='https://github.com/one-ccs/pyoc',
+    url='https://github.com/one-ccs/oc_pytools',
     license='MIT',
     classifiers=[
         'Development Status :: 3 - Alpha',
