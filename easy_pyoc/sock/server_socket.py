@@ -93,7 +93,7 @@ class ServerSocket:
         while self.is_active():
             try:
                 if not (data := client_sock.recv(1024)):
-                    print(f'{self} TCP 子线程 {client_addr} 正常断开')
+                    self.logger.debug(f'{self} TCP 子线程 {client_addr} 正常断开')
                     break
 
                 self.on_recv and self.on_recv(
@@ -102,14 +102,14 @@ class ServerSocket:
                     send_back=self.__send_back(client_addr, client_sock),
                 )
             except ConnectionResetError:
-                print(f'{self} TCP 子线程 {client_addr} 连接已重置')
+                self.logger.debug(f'{self} TCP 子线程 {client_addr} 连接已重置')
                 break
             except ConnectionAbortedError:
-                print(f'{self} TCP 子线程 {client_addr} 连接已终止')
+                self.logger.debug(f'{self} TCP 子线程 {client_addr} 连接已终止')
                 break
             except Exception as e:
                 if self.is_active():
-                    print(f'{self} TCP 子线程 {client_addr} 异常: \n{e}')
+                    self.logger.error(f'{self} TCP 子线程 {client_addr} 异常: \n{e}')
                 break
         if self.is_active(): # 断开或异常
             self.tcp_sub_socks.remove(client_sock)
@@ -134,7 +134,7 @@ class ServerSocket:
                     )
             except Exception as e:
                 if self.is_active():
-                    print(f'{self} 主线程异常 : \n{e}')
+                    self.logger.error(f'{self} 主线程异常 : \n{e}')
                     break
 
     def send(self, data: bytes, client_addr: tuple[str, int]) -> int:
@@ -168,7 +168,7 @@ class ServerSocket:
         try:
             self.__create_socket()
         except Exception as e:
-            print(f'{self} 创建失败: \n{e}')
+            self.logger.error(f'{self} 创建失败: \n{e}')
             return False
 
         if is_process:
@@ -191,15 +191,20 @@ class ServerSocket:
                     client_sock.shutdown(socket.SHUT_RDWR)
                     client_sock.close()
                 self.tcp_sub_socks.clear()
-            else:
+            try:
+                # windows 平台 TCP 无需 shutdown (此时 shutdown 会导致 10057 错误)
+                # linux 平台非 TCP shutdown 会报 107 错误
                 self.sock.shutdown(socket.SHUT_RDWR)
+            except OSError as e:
+                if e.errno != 107 and e.errno != 10057:
+                    raise e
             self.sock.close()
             if isinstance(self.thread, multiprocessing.Process):
                 self.thread.terminate()
             else:
                 self.thread.join()
         except Exception as e:
-            print(f'{self} 关闭失败: \n{e}')
+            self.logger.error(f'{self} 关闭失败: \n{e}')
             return False
         return True
 

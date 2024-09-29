@@ -60,9 +60,9 @@ class ClientSocket:
                 self.sock.settimeout(self.recv_timeout)
                 self.__connected = True
             except ConnectionRefusedError:
-                self.logger.error(f'{self} 无法连接: {self.ip}:{self.port}')
+                self.logger.debug(f'{self} 无法连接: {self.ip}:{self.port}')
             except Exception as e:
-                self.logger.error(f'{self} 创建失败: {e}')
+                self.logger.error(f'{self} 创建失败: \n{e}')
         return self.__connected
 
     def send(self, data: bytes) -> None:
@@ -73,21 +73,21 @@ class ClientSocket:
                 self.sock.sendto(data, (self.ip, self.port))
         except OSError as e:
             if e.errno == 10057:
-                self.logger.error(f'{self} 发送失败连接未建立')
+                self.logger.debug(f'{self} 发送失败连接未建立')
             else:
-                self.logger.error(f'{self} 发送失败: {e}')
+                self.logger.error(f'{self} 发送失败: \n{e}')
 
     def recv(self) -> bytes | None:
         try:
             data, _ = self.sock.recvfrom(1024)
             return data
         except TimeoutError:
-            self.logger.error(f'{self} 接收超时')
+            self.logger.debug(f'{self} 接收超时')
         except OSError as e:
             if e.errno == 10057:
-                self.logger.error(f'{self} 接收失败连接未建立')
+                self.logger.debug(f'{self} 接收失败连接未建立')
             else:
-                self.logger.error(f'{self} 接收失败: {e}')
+                self.logger.error(f'{self} 接收失败: \n{e}')
         return None
 
     def close(self) -> bool:
@@ -97,5 +97,5 @@ class ClientSocket:
                 self.sock.close()
                 self.__connected = False
             except Exception as e:
-                self.logger.error(f'{self} 关闭失败: {e}')
+                self.logger.error(f'{self} 关闭失败: \n{e}')
         return not self.__connected
