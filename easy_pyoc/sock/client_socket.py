@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import socket
+from logging import Logger, getLogger
 
 
 class ClientSocket:
-    def __init__(self, *, protocol: str, ip: str, port: int, recv_timeout: float = 1.5):
+    def __init__(self, *, protocol: str, ip: str, port: int, recv_timeout: float = 1.5, logger: Logger | None = None):
         """客户端套接字
 
         发送 TCP/UDP/MULTICAST 数据并接收响应。
@@ -14,6 +15,7 @@ class ClientSocket:
             ip (str): ip 地址
             port (int): 端口号
             recv_timeout (float, optional): 接收超时时间. Defaults to 1.5.
+            logger (Logger | None, optional): 日志记录器. Defaults to None.
 
         Raises:
             ValueError: 无效的端口号, 应为 [1-65535]
@@ -28,6 +30,7 @@ class ClientSocket:
         self.ip = ip
         self.port = port
         self.recv_timeout = recv_timeout
+        self.logger = logger or getLogger()
         self.sock: socket.socket | None = None
         self.__connected = False
 
@@ -57,40 +60,34 @@ class ClientSocket:
                 self.sock.settimeout(self.recv_timeout)
                 self.__connected = True
             except ConnectionRefusedError:
-                print(f'{self} 无法连接: {self.ip}:{self.port}')
+                self.logger.error(f'{self} 无法连接: {self.ip}:{self.port}')
             except Exception as e:
-                print(f'{self} 创建失败: {e}')
+                self.logger.error(f'{self} 创建失败: {e}')
         return self.__connected
 
     def send(self, data: bytes) -> None:
-        if not self.__connected:
-            self.connect()
-
         try:
-            print(f'{self} 发送数据: {data}')
-
             if self.protocol == 'TCP':
                 self.sock.sendall(data)
             else:
                 self.sock.sendto(data, (self.ip, self.port))
         except OSError as e:
             if e.errno == 10057:
-                print(f'{self} 发送失败连接未建立')
+                self.logger.error(f'{self} 发送失败连接未建立')
             else:
-                print(f'{self} 发送失败: {e}')
+                self.logger.error(f'{self} 发送失败: {e}')
 
     def recv(self) -> bytes | None:
         try:
             data, _ = self.sock.recvfrom(1024)
-            print(f'{self} 收到数据: {data}')
             return data
         except TimeoutError:
-            print(f'{self} 接收超时')
+            self.logger.error(f'{self} 接收超时')
         except OSError as e:
             if e.errno == 10057:
-                print(f'{self} 接收失败连接未建立')
+                self.logger.error(f'{self} 接收失败连接未建立')
             else:
-                print(f'{self} 接收失败: {e}')
+                self.logger.error(f'{self} 接收失败: {e}')
         return None
 
     def close(self) -> bool:
@@ -100,5 +97,5 @@ class ClientSocket:
                 self.sock.close()
                 self.__connected = False
             except Exception as e:
-                print(f'{self} 关闭失败: {e}')
+                self.logger.error(f'{self} 关闭失败: {e}')
         return not self.__connected

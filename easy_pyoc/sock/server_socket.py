@@ -3,10 +3,11 @@
 import socket
 import threading
 import multiprocessing
+from logging import Logger, getLogger
 
 
 class ServerSocket:
-    def __init__(self, *, protocol: str, port: int, group: str = '', on_recv: 'function'):
+    def __init__(self, *, protocol: str, port: int, group: str = '', on_recv: 'function', logger: Logger | None = None):
         """服务端套接字
 
         在新线程中创建 TCP/UDP/MULTICAST 协议的服务端套接字，接收客户端的
@@ -28,6 +29,7 @@ class ServerSocket:
             port (int): 端口号
             group (str, optional): 组播地址. Defaults to ''.
             on_recv (function, optional): 接收到数据时的回调函数, 参数为 (data: bytes, client_name: str). Defaults to None.
+            logger (Logger | None, optional): 日志记录器. Defaults to None.
 
         Raises:
             ValueError: 无效的端口号, 应为 [1-65535]
@@ -42,11 +44,11 @@ class ServerSocket:
         if protocol != 'MULTICAST' and group:
             raise ValueError(f'ServerSocket 协议类型 "{protocol}" 请勿设置 group 参数')
 
-
         self.protocol = protocol
         self.port = port
         self.group = group
         self.on_recv = on_recv
+        self.logger = logger or getLogger()
         self.sock: socket.socket | None = None
         self.tcp_sub_socks: list[socket.socket] = []
         self.thread: threading.Thread | None = None
@@ -58,7 +60,8 @@ class ServerSocket:
         return f'ServerSocket({self.protocol}, {self.port})'
 
     def __del__(self) -> None:
-        self.close()
+        if self.is_active():
+            self.close()
 
     def __create_socket(self) -> None:
         match self.protocol:
@@ -133,6 +136,23 @@ class ServerSocket:
                 if self.is_active():
                     print(f'{self} 主线程异常 : \n{e}')
                     break
+
+    def send(self, data: bytes, client_addr: tuple[str, int]) -> int:
+        """向指定客户端发送数据
+
+        Args:
+            data (bytes): 要发送的数据
+            client_addr (tuple[str, int]): 客户端地址
+
+        Returns:
+            int: 实际发送的字节数
+        """
+        if self.protocol == 'TCP':
+            for client_sock in self.tcp_sub_socks:
+                if client_sock.getpeername() == client_addr:
+                    return client_sock.sendall(data)
+            return 0
+        return self.sock.sendto(data, client_addr)
 
     def start(self, is_process: bool = False) -> bool:
         """启动服务端
