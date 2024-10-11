@@ -6,7 +6,7 @@ from flask import Request
 from .object_util import ObjectUtil
 
 
-class RequestUtils(object):
+class FlaskUtil(object):
 
     @staticmethod
     def quick_data(request: Request, *keys) -> Union[tuple, dict, any]:
