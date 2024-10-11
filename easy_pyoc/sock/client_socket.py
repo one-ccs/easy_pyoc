@@ -71,6 +71,7 @@ class ClientSocket:
                 self.sock.sendall(data)
             else:
                 self.sock.sendto(data, (self.ip, self.port))
+            self.logger.debug(f'{self} 发送数据: {data}')
         except OSError as e:
             if e.errno == 10057:
                 self.logger.debug(f'{self} 发送失败连接未建立')
@@ -80,6 +81,7 @@ class ClientSocket:
     def recv(self) -> bytes | None:
         try:
             data, _ = self.sock.recvfrom(1024)
+            self.logger.debug(f'{self} 接收数据: {data}')
             return data
         except TimeoutError:
             self.logger.debug(f'{self} 接收超时')
@@ -96,6 +98,7 @@ class ClientSocket:
                 self.sock.shutdown(socket.SHUT_RDWR)
                 self.sock.close()
                 self.__connected = False
+                self.logger.debug(f'{self} 已关闭')
             except Exception as e:
                 self.logger.error(f'{self} 关闭失败: \n{e}')
         return not self.__connected
