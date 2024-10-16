@@ -7,7 +7,7 @@ from logging import Logger, getLogger
 
 
 class ServerSocket:
-    def __init__(self, *, protocol: str, port: int, group: str = '', on_recv: 'function', logger: Logger | None = None):
+    def __init__(self, *, protocol: str, port: int, group: str = '', on_recv: 'function', bind_ip: str = '0.0.0.0', logger: Logger | None = None):
         """服务端套接字
 
         在新线程中创建 TCP/UDP/MULTICAST 协议的服务端套接字，接收客户端的
@@ -29,6 +29,7 @@ class ServerSocket:
             port (int): 端口号
             group (str, optional): 组播地址. Defaults to ''.
             on_recv (function, optional): 接收到数据时的回调函数, 参数为 (data: bytes, client_name: str). Defaults to None.
+            bind_ip (str, optional): 绑定的 IP 地址, 多网卡时设置该项可以指定绑定的网卡. Defaults to '0.0.0.0'.
             logger (Logger | None, optional): 日志记录器. Defaults to None.
 
         Raises:
@@ -48,6 +49,7 @@ class ServerSocket:
         self.port = port
         self.group = group
         self.on_recv = on_recv
+        self.bind_ip = bind_ip
         self.logger = logger or getLogger()
         self.sock: socket.socket | None = None
         self.tcp_sub_socks: list[socket.socket] = []
@@ -67,19 +69,21 @@ class ServerSocket:
         match self.protocol:
             case 'TCP':
                 self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.sock.bind(('0.0.0.0', self.port))
+                self.sock.bind((self.bind_ip, self.port))
                 self.sock.listen(10)
             case 'UDP':
                 self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                self.sock.bind(('0.0.0.0', self.port))
+                self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                self.sock.bind((self.bind_ip, self.port))
             case 'MULTICAST':
                 self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                self.sock.bind(('0.0.0.0', self.port))
+                self.sock.bind((self.bind_ip, self.port))
                 self.sock.setsockopt(
                     socket.IPPROTO_IP,
                     socket.IP_ADD_MEMBERSHIP,
-                    socket.inet_aton(self.group) + socket.INADDR_ANY.to_bytes(4, byteorder='big'))
+                    socket.inet_aton(self.group) + socket.inet_aton(self.bind_ip),
+                )
 
     def __send_back(self, client_addr: tuple[str, int], client_sock: socket.socket | None = None) -> 'function':
         def send_back(data: bytes):

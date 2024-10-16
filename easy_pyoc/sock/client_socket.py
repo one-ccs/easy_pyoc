@@ -49,14 +49,20 @@ class ClientSocket:
                         self.sock.connect((self.ip, self.port))
                     case 'UDP':
                         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                         if self.ip.endswith('.255'): # 设置 SO_BROADCAST 为 1, 允许发送广播数据包
                             self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
                     case 'MULTICAST':
                         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+                        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                         self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
                         self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 1)
                         self.sock.bind(('', self.port))
-                        self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(self.ip) + socket.inet_aton('0.0.0.0'))
+                        self.sock.setsockopt(
+                            socket.IPPROTO_IP,
+                            socket.IP_ADD_MEMBERSHIP,
+                            socket.inet_aton(self.ip) + socket.inet_aton('0.0.0.0'),
+                        )
                 self.sock.settimeout(self.recv_timeout)
                 self.__connected = True
             except ConnectionRefusedError:
