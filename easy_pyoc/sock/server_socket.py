@@ -3,11 +3,13 @@
 import socket
 import threading
 import multiprocessing
-from logging import Logger, getLogger
+from typing import Callable
+
+from ..logger import Logger
 
 
-class ServerSocket:
-    def __init__(self, *, protocol: str, port: int, group: str = '', on_recv: 'function', bind_ip: str = '0.0.0.0', logger: Logger | None = None):
+class ServerSocket():
+    def __init__(self, *, protocol: str, bind: tuple[str, int], group: str | None = None, on_recv: Callable):
         """服务端套接字
 
         在新线程中创建 TCP/UDP/MULTICAST 协议的服务端套接字，接收客户端的
@@ -26,40 +28,44 @@ class ServerSocket:
 
         Args:
             protocol (str): 协议
-            port (int): 端口号
-            group (str, optional): 组播地址. Defaults to ''.
-            on_recv (function, optional): 接收到数据时的回调函数, 参数为 (data: bytes, client_name: str). Defaults to None.
-            bind_ip (str, optional): 绑定的 IP 地址, 多网卡时设置该项可以指定绑定的网卡. Defaults to '0.0.0.0'.
-            logger (Logger | None, optional): 日志记录器. Defaults to None.
+            bind (tuple[str, int]): 绑定的地址, 注: 当多网卡, 且 ip 为 "0.0.0.0" 时, 有可能接收不到数据.
+            group (tuple[str, int] | None, optional): 组播地址, 仅在协议类型为 "MULTICAST" 时有效. 默认为 None.
+            on_recv (Callable, optional): 接收到数据时的回调函数, 参数为 (data: bytes, client_name: str, send_back: Callable). 默认为 None.
 
         Raises:
-            ValueError: 无效的端口号, 应为 [1-65535]
             ValueError: 无效的协议类型, 应为 [TCP, UDP, MULTICAST]
+            ValueError: 组播协议必须指定组播地址
+            ValueError: 协议类型为非 "MULTICAST" 时请勿设置 group 参数
+            ValueError: 绑定地址 (bind[0]) 不能为空
+            ValueError: 无效的端口号, 应为 [1-65535]
+        Examples:
         """
-        if port < 1 or port > 65535:
-            raise ValueError(f'ServerSocket 无效的端口号 "{port}"')
+        self.__active = False
+
         if protocol not in ['TCP', 'UDP', 'MULTICAST']:
             raise ValueError(f'ServerSocket 无效的协议类型 "{protocol}"')
         if protocol == 'MULTICAST' and not group:
             raise ValueError(f'ServerSocket 组播协议必须指定组播地址')
         if protocol != 'MULTICAST' and group:
-            raise ValueError(f'ServerSocket 协议类型 "{protocol}" 请勿设置 group 参数')
+            raise ValueError(f'ServerSocket 协议类型为 "{protocol}" 时请勿设置 group 参数')
+        if not bind[0]:
+            raise ValueError(f'ServerSocket 绑定地址不能为空')
+        if bind[1] < 1 or bind[1] > 65535:
+            raise ValueError(f'ServerSocket 无效的端口号 "{bind[1]}"')
 
+        self.logger = Logger()
         self.protocol = protocol
-        self.port = port
+        self.bind = bind
         self.group = group
         self.on_recv = on_recv
-        self.bind_ip = bind_ip
-        self.logger = logger or getLogger()
         self.sock: socket.socket | None = None
         self.tcp_sub_socks: list[socket.socket] = []
         self.thread: threading.Thread | None = None
-        self.__active = False
 
     def __str__(self) -> str:
         if self.protocol == 'MULTICAST':
-            return f'ServerSocket({self.protocol}, {self.group}:{self.port})'
-        return f'ServerSocket({self.protocol}, {self.port})'
+            return f'ServerSocket({self.protocol}, bind {self.bind[0]}:{self.bind[1]}, group {self.group})'
+        return f'ServerSocket({self.protocol}, bind {self.bind[0]}:{self.bind[1]})'
 
     def __del__(self) -> None:
         if self.is_active():
@@ -69,24 +75,26 @@ class ServerSocket:
         match self.protocol:
             case 'TCP':
                 self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.sock.bind((self.bind_ip, self.port))
+                self.sock.bind(self.bind)
                 self.sock.listen(10)
             case 'UDP':
                 self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                self.sock.bind((self.bind_ip, self.port))
+                self.sock.bind(self.bind)
             case 'MULTICAST':
                 self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                self.sock.bind((self.bind_ip, self.port))
+                self.sock.bind(self.bind)
                 self.sock.setsockopt(
                     socket.IPPROTO_IP,
                     socket.IP_ADD_MEMBERSHIP,
-                    socket.inet_aton(self.group) + socket.inet_aton(self.bind_ip),
+                    socket.inet_aton(self.group) + socket.inet_aton(self.bind[0]),
                 )
 
-    def __send_back(self, client_addr: tuple[str, int], client_sock: socket.socket | None = None) -> 'function':
+    def __send_back(self, client_addr: tuple[str, int], client_sock: socket.socket | None = None) -> Callable:
         def send_back(data: bytes):
+            self.logger.debug(f'{self} 向 {client_addr} 返回数据: {data}')
+
             if self.protocol == 'TCP':
                 return client_sock.sendto(data, client_addr)
             return self.sock.sendto(data, client_addr)
@@ -100,6 +108,7 @@ class ServerSocket:
                     self.logger.debug(f'{self} TCP 子线程 {client_addr} 正常断开')
                     break
 
+                self.logger.debug(f'{self} TCP 子线程 {client_addr} 接收到数据: {data}')
                 self.on_recv and self.on_recv(
                     data=data,
                     client_addr=client_addr,
@@ -115,7 +124,7 @@ class ServerSocket:
                 if self.is_active():
                     self.logger.error(f'{self} TCP 子线程 {client_addr} 异常: \n{e}')
                 break
-        if self.is_active(): # 断开或异常
+        if self.is_active(): # 断开或异常断开
             self.tcp_sub_socks.remove(client_sock)
             client_sock.close()
 
@@ -126,11 +135,13 @@ class ServerSocket:
             try:
                 if self.protocol == 'TCP':
                         client_sock, client_addr = self.sock.accept()
+                        self.logger.debug(f'{self} 与 {client_addr} 建立 TCP 连接')
                         self.tcp_sub_socks.append(client_sock)
                         threading.Thread(target=self.__tcp_sub_thread, args=(client_sock, client_addr), daemon=True).start()
                 else:
                     data, client_addr = self.sock.recvfrom(1024)
 
+                    self.logger.debug(f'{self} 收到 {client_addr} 的数据: {data}')
                     self.on_recv and self.on_recv(
                         data=data,
                         client_addr=client_addr,
@@ -149,8 +160,11 @@ class ServerSocket:
             client_addr (tuple[str, int]): 客户端地址
 
         Returns:
-            int: 实际发送的字节数
+            int: 实际发送的字节数, 为 -1 表示 socket 未建立或已关闭
         """
+        if not self.is_active():
+            return -1
+
         if self.protocol == 'TCP':
             for client_sock in self.tcp_sub_socks:
                 if client_sock.getpeername() == client_addr:
@@ -164,7 +178,7 @@ class ServerSocket:
         将在新线程中运行，直到调用 close() 关闭，TCP 协议下会创建子线程处理 TCP 连接
 
         Args:
-            is_process (bool, optional): 是否以子进程运行. Defaults to False.
+            is_process (bool, optional): 是否以子进程运行. 默认为 False.
 
         Returns:
             bool: 是否启动成功
