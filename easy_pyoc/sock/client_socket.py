@@ -85,19 +85,24 @@ class ClientSocket():
         return self.__connected
 
     def send(self, data: bytes) -> None:
-        try:
-            if self.protocol == 'TCP':
-                self.sock.sendall(data)
-            else:
-                self.sock.sendto(data, (self.ip, self.port))
-            self.logger.debug(f'{self} 发送数据: {data}')
-        except OSError as e:
-            if e.errno == 10057:
-                self.logger.debug(f'{self} 发送失败连接未建立')
-            else:
-                self.logger.error(f'{self} 发送失败: \n{e}')
+        if self.connect():
+            try:
+                if self.protocol == 'TCP':
+                    self.sock.sendall(data)
+                else:
+                    self.sock.sendto(data, (self.ip, self.port))
+                self.logger.debug(f'{self} 发送数据: {data}')
+            except OSError as e:
+                if e.errno == 10057:
+                    self.logger.debug(f'{self} 发送失败连接未建立')
+                else:
+                    self.logger.error(f'{self} 发送失败: \n{e}')
 
     def recv(self) -> bytes | None:
+        if not self.__connected:
+            self.logger.debug(f'{self} 未连接, 无法接收数据')
+            return None
+
         try:
             data, _ = self.sock.recvfrom(1024)
             self.logger.debug(f'{self} 接收数据: {data}')

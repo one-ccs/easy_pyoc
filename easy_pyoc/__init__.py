@@ -9,10 +9,14 @@ from .utils import DateTimeUtil as DateTimeUtil
 from .utils import ObjectUtil as ObjectUtil
 from .utils import PathUtil as PathUtil
 from .utils import StringUtil as StringUtil
+from .utils import XMLUtil as XMLUtil
 
 
+
+__version__ = '0.4.0'
 __author__ = 'one-ccs'
-__version__ = '0.3.0'
+__email__ = 'one-ccs@foxmail.com'
+
 __all__ = [
     'Logger',
 
@@ -23,4 +27,5 @@ __all__ = [
     'ObjectUtil',
     'PathUtil',
     'StringUtil',
+    'XMLUtil',
 ]

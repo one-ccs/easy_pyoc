@@ -16,6 +16,7 @@
 - `ObjectUtil` 对象相关工具
 - `PathUtil` 路径相关工具
 - `StringUtil` 字符串相关工具
+- `XMLUtil` xml 相关工具
 
 ## 3、OcGui
 

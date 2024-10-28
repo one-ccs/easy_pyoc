@@ -4,6 +4,7 @@ from .datetime_util import DateTimeUtil
 from .object_util import ObjectUtil
 from .path_util import PathUtil
 from .string_util import StringUtil
+from .xml_util import XMLUtil
 
 
 __all__ = [
@@ -11,4 +12,5 @@ __all__ = [
     'ObjectUtil',
     'PathUtil',
     'StringUtil',
+    'XMLUtil',
 ]
