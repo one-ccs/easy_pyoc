@@ -1,16 +1,32 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from .datetime_util import DateTimeUtil
-from .object_util import ObjectUtil
-from .path_util import PathUtil
-from .string_util import StringUtil
-from .xml_util import XMLUtil
 
 
-__all__ = [
-    'DateTimeUtil',
-    'ObjectUtil',
-    'PathUtil',
-    'StringUtil',
-    'XMLUtil',
-]
+class NotThisModule(object):
+
+    def __new__(cls, *args, **kwargs):
+        raise ImportError(cls.get_msg())
+
+    def __repr__(self):
+        raise ImportError(self.get_msg())
+
+    def __getattribute__(self, name):
+        raise ImportError(self.get_msg())
+
+    @classmethod
+    def get_msg(cls):
+        return f'没有成功导入 "{cls.get_name()}", 原因: "{cls.get_reason()}".'
+
+    @classmethod
+    def get_name(cls):
+        return cls.__not_this_module__['name']
+
+    @classmethod
+    def get_reason(cls):
+        return cls.__not_this_module__['reason']
+
+
+def not_this_module(name: str, reason: str):
+    return type('NotThisModule', (NotThisModule,), {
+        '__not_this_module__': {'name': name, 'reason': reason},
+    })

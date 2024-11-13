@@ -2,19 +2,35 @@
 # -*- coding: utf-8 -*-
 from .logger import Logger as Logger
 
-from .sock import ServerSocket as ServerSocket
-from .sock import ClientSocket as ClientSocket
-from .sock import use_WOL as use_WOL
+from .sock.server_socket import ServerSocket as ServerSocket
+from .sock.client_socket import ClientSocket as ClientSocket
+from .sock.use_protocol import use_WOL as use_WOL
 
-from .utils import DateTimeUtil as DateTimeUtil
-from .utils import ObjectUtil as ObjectUtil
-from .utils import PathUtil as PathUtil
-from .utils import StringUtil as StringUtil
-from .utils import XMLUtil as XMLUtil
+from .utils import not_this_module
+from .utils.datetime_util import DateTimeUtil as DateTimeUtil
+from .utils.json_utl import JSONUtil as JSONUtil
+from .utils.object_util import ObjectUtil as ObjectUtil
+from .utils.path_util import PathUtil as PathUtil
+from .utils.string_util import StringUtil as StringUtil
+from .utils.xml_util import XMLUtil as XMLUtil
+
+try:
+    from .utils.flask_util import FlaskUtil as FlaskUtil
+except ImportError as e:
+    FlaskUtil = not_this_module('FlaskUtil', e.msg)
+
+try:
+    from .utils.toml_util import TOMLUtil as TOMLUtil
+except ImportError as e:
+    TOMLUtil = not_this_module('TOMLUtil', e.msg)
+
+try:
+    from .utils.yaml_util import YAMLUtil as YAMLUtil
+except ImportError as e:
+    YAMLUtil = not_this_module('YAMLUtil', e.msg)
 
 
-
-__version__ = '0.5.0'
+__version__ = '0.6.0'
 __author__ = 'one-ccs'
 __email__ = 'one-ccs@foxmail.com'
 
@@ -26,8 +42,12 @@ __all__ = [
     'use_WOL',
 
     'DateTimeUtil',
+    'FlaskUtil',
+    'JSONUtil',
     'ObjectUtil',
     'PathUtil',
     'StringUtil',
+    'TOMLUtil',
     'XMLUtil',
+    'YAMLUtil',
 ]

@@ -10,9 +10,9 @@ def use_WOL(mac_hex: str, bind: tuple[str, int] | None = None, ip: str | None = 
 
     Args:
         mac_hex (str): mac 地址, 12 位十六进制字符串
-        ip (str, optional): 广播地址, 为 None 时自动设置. Defaults to None.
-        port (int, optional): 目标端口. Defaults to 1234.
-        bind (tuple[str, int], optional): 本地绑定地址. Defaults to None.
+        ip (str, optional): 广播地址, 为 None 时自动设置. 默认为 None.
+        port (int, optional): 目标端口. 默认为 1234.
+        bind (tuple[str, int], optional): 本地绑定地址. 默认为 None.
     """
     localhost = socket.gethostbyname(socket.gethostname())
     broadcast_host = '.'.join(localhost.split('.')[:-1] + ['255']) if ip is None else ip

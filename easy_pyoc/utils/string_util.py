@@ -31,7 +31,7 @@ class StringUtil(object):
 
         Args:
             hex_str (str): 16 进制字符串.
-            reverse (bool, optional): 是否反转字节顺序。 Defaults to False.
+            reverse (bool, optional): 是否反转字节顺序。 默认为 False.
 
         Returns:
             str: 格式化后的 16 进制字符串.
@@ -49,8 +49,8 @@ class StringUtil(object):
 
         Args:
             num (int): 整数.
-            base (int, optional): 进制. Defaults to 10.
-            length (int, optional): 填充长度. Defaults to 0.
+            base (int, optional): 进制. 默认为 10.
+            length (int, optional): 填充长度. 默认为 0.
 
         Returns:
             str: 转换后的字符串.
@@ -78,7 +78,7 @@ class StringUtil(object):
 
         Args:
             string (str): 字符串.
-            base (int, optional): 进制. Defaults to 10.
+            base (int, optional): 进制. 默认为 10.
 
         Returns:
             int: 转换后的整数.

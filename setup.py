@@ -8,13 +8,14 @@ with open('README.md', 'r', encoding='utf-8') as f:
 
 setup(
     name='easy_pyoc',
-    version='0.5.0',
+    version='0.6.0',
     description='封装一些 Python 组件',
     long_description=LONG_DESCRIPTION,
     long_description_content_type='text/markdown',
     author='one-ccs',
     author_email='one-ccs@foxmail.com',
     url='https://github.com/one-ccs/easy_pyoc',
+    repository='https://github.com/one-ccs/easy_pyoc',
     license='MIT',
     classifiers=[
         'Development Status :: 3 - Alpha',
@@ -38,5 +39,6 @@ setup(
     extras_require={
         'easy_pyoc.qt5': ['PyQt5'],
         'utils.flask_util': ['flask'],
+        'utils.yaml_util': ['PyYAML'],
     },
 )

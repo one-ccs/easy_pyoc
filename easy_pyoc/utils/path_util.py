@@ -1,14 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from os import path
+from typing import TYPE_CHECKING
 from pathlib import Path
+from contextlib import contextmanager
+
+if TYPE_CHECKING:
+    from _typeshed import FileDescriptorOrPath
 
 
 class PathUtil(object):
 
     @staticmethod
     def get_project_root(root_name: str, join_path: str | None = None) -> str:
-        """ 返回项目根目录的绝对地址
+        """返回项目根目录的绝对地址
 
         :param root_name 跟文件夹名称
         :param join_path 拼接路径
@@ -20,16 +24,28 @@ class PathUtil(object):
         return root_path
 
     @staticmethod
-    def abspath(_path: str = '') -> str:
-        """ 返回路径的绝对路径 """
-        return path.abspath(_path)
+    def abspath(path: str = '') -> str:
+        """返回路径的绝对路径"""
+        return str(Path(path).absolute())
 
     @staticmethod
-    def is_exists_file(_path: str) -> bool:
-        """ 判断文件是否存在 """
-        return path.exists(_path) and path.isfile(_path)
+    def is_exists_file(path: str) -> bool:
+        """判断文件是否存在"""
+        _path = Path(path)
+        return _path.exists() and _path.is_file()
 
     @staticmethod
-    def is_exists_dir(_path: str) -> bool:
-        """ 判断路径是否是个存在 """
-        return path.exists(_path) and path.isdir(_path)
+    def is_exists_dir(path: str) -> bool:
+        """判断路径是否是个存在"""
+        _path = Path(path)
+        return _path.exists() and _path.is_dir()
+
+    @staticmethod
+    @contextmanager
+    def open(fp: 'FileDescriptorOrPath', mode: str, buffering: int = -1, encoding: str = 'utf-8'):
+        """打开文件"""
+        try:
+            with open(fp, mode=mode, buffering=buffering, encoding=encoding) as f:
+                yield f
+        except FileNotFoundError:
+            raise FileNotFoundError(f'文件 "{PathUtil.abspath(fp)}" 不存在')

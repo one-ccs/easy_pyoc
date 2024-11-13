@@ -9,7 +9,7 @@ class Logger:
 
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
-            cls._instance = logging.getLogger('easy_pyoc')
+            cls._instance = logging.getLogger(kwargs.get('name', 'easy_pyoc'))
             cls._instance.setLevel(logging.INFO)
 
             handler = logging.StreamHandler()
