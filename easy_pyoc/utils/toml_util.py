@@ -17,10 +17,10 @@ class TOMLUtil(object):
     """TOML 工具类, 仅提供 TOML 解析功能."""
 
     @staticmethod
-    def loads(text: str) -> dict[str, Any]:
+    def loads(text: str):
         return tomllib.loads(text)
 
     @staticmethod
-    def load(fp: 'FileDescriptorOrPath', encoding: str = 'utf-8') -> dict[str, Any]:
+    def load(fp: 'FileDescriptorOrPath', encoding: str = 'utf-8'):
         with PathUtil.open(fp, 'r', encoding=encoding) as f:
             return tomllib.load(f)

@@ -1,15 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from typing import TYPE_CHECKING, TypeVar, Optional, Literal, Callable, Any
-from typing_extensions import Self
+from typing import TypeVar, Literal
 from functools import reduce
 from operator import getitem
 
-if TYPE_CHECKING:
-    from _typeshed import FileDescriptorOrPath
-
 from .string_util import StringUtil
-from .path_util import PathUtil
 
 
 _T = TypeVar('_T')
@@ -17,130 +12,6 @@ _T = TypeVar('_T')
 
 class ObjectUtil(object):
     """对象工具类"""
-
-    class MagicClass(object):
-        """魔法类，用于实现 __str__、__repr__、__call__ 方法"""
-        _str_exclude = {}
-        _repr_exclude = {}
-        _call_exclude = {}
-        _str_include = {}
-        _repr_include = {}
-        _call_include = {}
-
-        def __str__(self) -> str:
-            return ObjectUtil.repr(self, self._str_exclude, self._str_include)
-
-        def __repr__(self) -> str:
-            return ObjectUtil.repr(self, self._repr_exclude, self._repr_include)
-
-        def __call__(self) -> dict:
-            return ObjectUtil.vars(self, self._call_exclude, self._call_include)
-
-    class ConfigClass(MagicClass):
-
-        def __init__(
-            self,
-            config: dict | Callable[[], dict] | 'FileDescriptorOrPath',
-            *,
-            decoder: Literal['yaml', 'toml', 'json'] = 'yaml',
-            default_map: Optional[dict] = None,
-            hook: Optional[Callable[[str, Any, Self], Any]] = None,
-        ):
-            """将配置文件转为 dict 并让其可以像访问对象属性一样访问配置属性
-
-            Args:
-                config (dict | Callable[[], dict] | FileDescriptorOrPath):
-                    配置文件，可以是字典、函数或文件路径
-                decoder (Literal[&#39;yaml&#39;, &#39;toml&#39;, &#39;json&#39;], optional):
-                    当 *config* 参数为文件路径时的解码器. 默认为 *yaml*.
-                default_map (Optional[dict], optional):
-                    根据 *default_map* 参数设置配置项默认值. 默认为 None.
-                hook (Optional[Callable[[str, Any, Self], Any]], optional):
-                    设置属性时的钩子函数, 传入(属性名称, 属性值, 对象实例), 返回
-                    属性值设置对应属性, 若返回 `...` 忽略属性设置. 默认为 None.
-
-            Raises:
-                ValueError: 参数错误, *config* 必须为字典或路径.
-            """
-            if isinstance(config, dict):
-                self.__init_dict(config, default_map, hook)
-            elif callable(config):
-                self.__init_dict(decoder(), default_map, hook)
-            elif config is not None and decoder is not None:
-                self.config_path= PathUtil.abspath(config)
-
-                if decoder in {'yaml', 'toml', 'json'}:
-                    self.__init_dict(self.__load_config(config, decoder), default_map, hook)
-                else:
-                    raise ValueError(f'不支持的解码器类型 "{decoder}"')
-            else:
-                raise ValueError('参数错误')
-
-        def __getattr__(self, name):
-            raise AttributeError(f'没有名为 "{name}" 的配置属性.')
-
-        def __load_config(self, fp: 'FileDescriptorOrPath', decoder: Literal['yaml', 'toml', 'json']) -> dict:
-            match decoder:
-                case 'yaml':
-                    from .yaml_util import YAMLUtil
-
-                    return YAMLUtil.load(fp) or {}
-                case 'toml':
-                    from .toml_util import TOMLUtil
-
-                    return TOMLUtil.load(fp) or {}
-                case 'json':
-                    from json import load
-
-                    with PathUtil.open(fp, 'r') as f:
-                        return load(f) or {}
-
-        def __parse_list(self, data: list) -> list:
-            _data = []
-            for item in data:
-                if isinstance(item, dict):
-                    _data.append(ObjectUtil.ConfigClass(item))
-                elif isinstance(item, list):
-                    _data.append(self.__parse_list(item))
-                else:
-                    _data.append(item)
-            return _data
-
-        def __set_attr(self, attr: str, value: Any, hook: Optional[Callable[[str, Any, Self], Any]]):
-            if hook is not None:
-                value = hook(attr, value, self)
-
-            if value is not ...:
-                self.__dict__[attr] = value
-
-        def __init_dict(self, config: dict, default_map: Optional[dict], hook: Optional[Callable[[str, Any, Self], Any]]):
-            if not isinstance(config, dict):
-                raise ValueError('参数错误, config 必须为字典类型')
-            if default_map and not isinstance(default_map, dict):
-                raise ValueError('参数错误, default_map 必须为字典类型')
-            if hook and not callable(hook):
-                raise ValueError('参数错误, hook 必须为可调用对象')
-
-            self.config_dict = config
-
-            # 使用默认值设置配置项
-            if isinstance(default_map, dict):
-                for attr, value in default_map.items():
-                    if isinstance(value, dict):
-                        self.__set_attr(attr, ObjectUtil.ConfigClass(value), hook)
-                    elif isinstance(value, list):
-                        self.__set_attr(attr, self.__parse_list(value), hook)
-                    else:
-                        self.__set_attr(attr, value, hook)
-
-            # 加载配置项
-            for attr, value in self.config_dict.items():
-                if isinstance(value, dict):
-                    self.__set_attr(attr, ObjectUtil.ConfigClass(value), hook)
-                elif isinstance(value, list):
-                    self.__set_attr(attr, self.__parse_list(value), hook)
-                else:
-                    self.__set_attr(attr, value, hook)
 
     @staticmethod
     def repr(obj: object, exclude: set[str] = {}, include: set[str] = {}) -> str:

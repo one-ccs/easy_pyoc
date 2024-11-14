@@ -17,24 +17,24 @@ class YAMLUtil:
     """YAML 工具类"""
 
     @staticmethod
-    def loads(text: str) -> dict:
+    def loads(text: str):
         """将 yaml 字符串转换为 dict"""
         return yaml.safe_load(text)
 
     @staticmethod
-    def dumps(data: dict) -> str:
+    def dumps(data: dict):
         """将 dict 转换为 yaml 字符串"""
         return yaml.safe_dump(data)
 
     @staticmethod
-    def load(fp: 'FileDescriptorOrPath', encoding='utf-8') -> dict:
+    def load(fp: 'FileDescriptorOrPath', encoding='utf-8'):
         """读取 yaml 文件"""
         with PathUtil.open(fp, 'r', encoding=encoding) as f:
             data = yaml.safe_load(f)
         return data
 
     @staticmethod
-    def dump(fp: 'FileDescriptorOrPath', data: dict, encoding='utf-8') -> None:
+    def dump(fp: 'FileDescriptorOrPath', data: dict, encoding='utf-8'):
         """写入 yaml 文件"""
         with PathUtil.open(fp, 'w', encoding=encoding) as f:
             yaml.safe_dump(data, f)

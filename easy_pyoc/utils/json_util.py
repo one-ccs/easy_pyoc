@@ -22,7 +22,7 @@ class JSONUtil(object):
         parse_constant: Callable[[str], Any] | None = None,
         object_pairs_hook: Callable[[list[tuple[Any, Any]]], Any] | None = None,
         **kw: Any,
-    ) -> Any:
+    ):
         """反序列化 JSON 字符串 *text* (*str*, *bytes*, 或 *bytearray*) 为 Python 对象.
 
         To use a custom `JSONDecoder` subclass, specify it with the `cls`
@@ -82,7 +82,7 @@ class JSONUtil(object):
         indent: int = 4,
         ensure_ascii: bool = False,
         default: Callable[[Any], Any] | None = None,
-    ) -> str:
+    ):
         return json.dumps(obj, indent=indent, ensure_ascii=ensure_ascii, default=default)
 
     @staticmethod
@@ -99,6 +99,6 @@ class JSONUtil(object):
         indent: int = 4,
         ensure_ascii: bool = False,
         default: Callable[[Any], Any] | None = None,
-    ) -> None:
+    ):
         with PathUtil.open(fp, 'w', encoding=encoding) as f:
             json.dump(obj, f, indent=indent, ensure_ascii=ensure_ascii, default=default)

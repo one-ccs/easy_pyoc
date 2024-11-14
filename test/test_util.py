@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import pytest
+import pytest, re
 
 from easy_pyoc import StringUtil
-from easy_pyoc import ObjectUtil
-
+from easy_pyoc import Config
 
 
 def test_string_util_its2():
@@ -77,47 +76,6 @@ def test_string_util_htm():
     assert StringUtil.hex_to_mac('ffffffffffff') == 'ff:ff:ff:ff:ff:ff'
     assert StringUtil.hex_to_mac('000000000000') == '00:00:00:00:00:00'
 
-
-def test_object_util_config_class():
-    with pytest.raises((ImportError, FileNotFoundError), match='(无法导入|文件.+不存在)'):
-        ObjectUtil.ConfigClass('test.toml', decoder='toml')
-
-    with pytest.raises(FileNotFoundError, match='文件 .+ 不存在'):
-        ObjectUtil.ConfigClass('test.json', decoder='json')
-
-    with pytest.raises(ValueError, match='不支持的解码器类型 .+'):
-        ObjectUtil.ConfigClass('test.txt', decoder='txt')
-
-    assert ObjectUtil.ConfigClass({'a': 1, 'b': [2, 3]}).a == 1
-    assert ObjectUtil.ConfigClass({'a': 1, 'b': [2, {'c': 3}, [4, {'d': 5}]]}).b[0] == 2
-    assert ObjectUtil.ConfigClass({'a': 1, 'b': [2, {'c': 3}, [4, {'d': 5}]]}).b[1].c == 3
-    assert ObjectUtil.ConfigClass({'a': 1, 'b': [2, {'c': 3}, [4, {'d': 5}]]}).b[2][0] == 4
-    assert ObjectUtil.ConfigClass({'a': 1, 'b': [2, {'c': 3}, [4, {'d': 5}]]}).b[2][1].d == 5
-    assert ObjectUtil.ConfigClass({'a': ['*']}).a == ['*']
-
-    assert ObjectUtil.ConfigClass({'a': 1, 'b': True}, default_map={'b': False}).b is True
-    assert ObjectUtil.ConfigClass({'a': 1, 'b': None}, default_map={'c': 123}).c == 123
-
-    assert ObjectUtil.ConfigClass({'a': 1, 'b': 2}, hook=lambda k, v, _: (v * 2)).a == 2
-
-    _ = ObjectUtil.ConfigClass({'a': 1, 'b': 2}, hook=lambda k, v, _: (v if k == 'a' else v * 2))
-    assert _.a == 1
-    assert _.b == 4
-
-    _ = ObjectUtil.ConfigClass({'a': 1, 'b': 2}, hook=lambda k, v, _: (v if k == 'a' else ...))
-    assert _.a == 1
-    with pytest.raises(AttributeError):
-        _.b
-
-    def hook(k, v, _):
-        if k == 'a':
-            _.a1 = 'a1'
-        return v
-    _ = ObjectUtil.ConfigClass({'a': 1, 'b': 2}, hook=hook)
-    assert _.a == 1
-    assert _.a1 == 'a1'
-
-
 def test_toml_util():
     import sys
 
@@ -131,3 +89,128 @@ def test_toml_util():
             _ = TOMLUtil()
     else:
         assert TOMLUtil.loads('') == {}
+
+
+def test_config_class():
+    with pytest.raises((ImportError, FileNotFoundError), match='(无法导入|文件.+不存在)'):
+        Config('test.toml', decoder='toml')
+
+    with pytest.raises(FileNotFoundError, match='文件 .+ 不存在'):
+        Config('test.json', decoder='json')
+
+    with pytest.raises(ValueError, match='不支持的解码器类型 .+'):
+        Config('test.txt', decoder='txt')
+
+    with pytest.raises(ValueError, match='不能作为根配置'):
+        Config([])
+
+    with pytest.raises(ValueError, match='不能作为根配置'):
+        Config(1)
+
+    def hook(o: Config, v):
+        if isinstance(v, int) and o.path != 'Config.f':
+            return v * 2
+        if o.path == 'Config.b[1][1].a1':
+            return 'aaa'
+        if o.path == 'Config.f':
+            return 666
+        return v
+
+    _ = Config(
+        {'a': 333, 'b': [1, [2, {'a1': 'a1'}]], 'c': {'c1': 'c1', 'c2': ['c21', 'c22']}},
+        default_map={'a': 123, 'f': 456},
+    ).set_config('d', 1).set_config('e', 2)
+    # 根测试
+    assert _.path == 'Config'
+    assert _.name == 'Config'
+    assert _.value == _
+    assert _.original_value == {'a': 333, 'b': [1, [2, {'a1': 'a1'}]], 'c': {'c1': 'c1', 'c2': ['c21', 'c22']}, 'f': 456, 'd': 1, 'e': 2}
+    # 简单子测试
+    assert _.a.path == 'Config.a'
+    assert _.a.name == 'a'
+    assert _.a.value == 333
+    assert _.a.original_value == 333
+    # 列表测试
+    assert _.b.path == 'Config.b'
+    assert _.b.name == 'b'
+    assert _.b.value == [_.b[0], _.b[1]]
+    assert _.b.original_value == [1, [2, {'a1': 'a1'}]]
+    # 列表子测试
+    assert _.b[0].path == 'Config.b[0]'
+    assert _.b[0].name == 'b[0]'
+    assert _.b[0].value == 1
+    assert _.b[0].original_value == 1
+    # 字典测试
+    assert _.c.path == 'Config.c'
+    assert _.c.name == 'c'
+    assert _.c.value == _.c
+    assert _.c.original_value
+    # 字符串取值测试
+    assert _['c'].path == 'Config.c'
+    assert _['c'].name == 'c'
+    assert _['c'].value == _.c
+    assert _['c'].original_value
+    # 字典子测试
+    assert _.c.c1.path == 'Config.c.c1'
+    assert _.c.c1.name == 'c1'
+    assert _.c.c1.value == 'c1'
+    assert _.c.c1.original_value == 'c1'
+    # 嵌套列表测试
+    assert _.b[1][1].path == 'Config.b[1][1]'
+    assert _.b[1][1].name == 'b[1][1]'
+    assert _.b[1][1].value == _.b[1][1]
+    assert _.b[1][1].original_value == {'a1': 'a1'}
+    # 嵌套字典测试
+    assert _.b[1][1].a1.path == 'Config.b[1][1].a1'
+    assert _.b[1][1].a1.name == 'a1'
+    assert _.b[1][1].a1.value == 'a1'
+    assert _.b[1][1].a1.original_value == 'a1'
+    # 自定义属性测试
+    assert _.d.path == 'Config.d'
+    assert _.d.name == 'd'
+    assert _.d.value == 1
+    assert _.d.original_value == 1
+    assert _.e.path == 'Config.e'
+    assert _.e.name == 'e'
+    assert _.e.value == 2
+    assert _.e.original_value == 2
+    # 默认值测试
+    assert _.a.value == 333
+    assert _.f.value == 456
+    # 递归取值测试
+    assert _.get_config('Config.a').value == 333
+    assert _.get_config('Config.b[0]').value == 1
+    assert _.get_config('Config.b[1][0]').value == 2
+    assert _.get_config('Config.b[1][1].a1').value == 'a1'
+    assert _.get_config('Config.c.c1').value == 'c1'
+    # hook 测试
+    _ = Config(
+        {'a': 333, 'b': [1, [2, {'a1': 'a1'}]], 'c': {'c1': 'c1', 'c2': ['c21', 'c22']}},
+        default_map={'a': 123, 'f': 456},
+        hook=hook,
+    ).set_config('d', 1).set_config('e', 2)
+    assert _.a.value == 666
+    assert _.a.original_value == 333
+    assert _.b[1][1].a1.value == 'aaa'
+    assert _.b[1][1].a1.original_value == 'a1'
+    assert _.f.value == 666
+    # 未知属性测试
+    with pytest.raises(AttributeError, match=re.escape('没有配置属性 "Config.x".')):
+        _.x
+    with pytest.raises(AttributeError, match=re.escape('没有配置属性 "Config.b[1][1].a2".')):
+        _.b[1][1].a2
+    # 字典属性修改测试
+    with pytest.raises(AttributeError, match=re.escape('请使用 Config.set_config 方法设置配置属性.')):
+        _.t1 = 123
+    with pytest.raises(ValueError, match=re.escape('不允许修改配置项 "Config.c.c1".')):
+        _.c['c1'] = 12345
+    with pytest.raises(ValueError, match=re.escape('不允许修改配置项 "Config.b[0]".')):
+        _.b[0] = 12345
+
+
+if __name__ == '__main__':
+    _ = Config(
+        {'a': 333, 'b': [1, [2, {'a1': 'a1'}]], 'c': {'c1': 'c1', 'c2': ['c21', 'c22']}},
+        default_map={'a': 123, 'f': 456},
+    ).set_config('d', 1).set_config('e', 2)
+    _.get_config('Config.a').value == 333

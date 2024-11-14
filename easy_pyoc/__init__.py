@@ -8,7 +8,7 @@ from .sock.use_protocol import use_WOL as use_WOL
 
 from .utils import not_this_module
 from .utils.datetime_util import DateTimeUtil as DateTimeUtil
-from .utils.json_utl import JSONUtil as JSONUtil
+from .utils.json_util import JSONUtil as JSONUtil
 from .utils.object_util import ObjectUtil as ObjectUtil
 from .utils.path_util import PathUtil as PathUtil
 from .utils.string_util import StringUtil as StringUtil
@@ -29,8 +29,11 @@ try:
 except ImportError as e:
     YAMLUtil = not_this_module('YAMLUtil', e.msg)
 
+from .classes.magic import Magic as Magic
+from .classes.config import Config as Config
 
-__version__ = '0.6.0'
+
+__version__ = '0.6.1'
 __author__ = 'one-ccs'
 __email__ = 'one-ccs@foxmail.com'
 
@@ -50,4 +53,7 @@ __all__ = [
     'TOMLUtil',
     'XMLUtil',
     'YAMLUtil',
+
+    'Magic',
+    'Config',
 ]
