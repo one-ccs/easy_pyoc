@@ -16,7 +16,7 @@ class ClientSocket():
             ip (str): 服务端 ip 地址
             port (int): 服务端端口号
             bind (tuple[str, int] | None, optional): 绑定地址. 默认为 None.
-            recv_timeout (float, optional): 接收超时时间. 默认为 1.5.
+            recv_timeout (float, optional): 接收超时时间, 0 为无超时. 默认为 1.5.
 
         Raises:
             ValueError: 无效的协议类型, 应为 [TCP, UDP, MULTICAST]
@@ -76,7 +76,8 @@ class ClientSocket():
                             socket.IP_ADD_MEMBERSHIP,
                             socket.inet_aton(self.ip) + socket.inet_aton('0.0.0.0'),
                         )
-                self.sock.settimeout(self.recv_timeout)
+                if isinstance(self.recv_timeout, (int, float)) and self.recv_timeout > 0:
+                    self.sock.settimeout(self.recv_timeout)
                 self.__connected = True
             except ConnectionRefusedError:
                 self.logger.debug(f'{self} 无法连接: {self.ip}:{self.port}')

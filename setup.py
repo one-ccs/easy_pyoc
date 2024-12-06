@@ -8,7 +8,7 @@ with open('README.md', 'r', encoding='utf-8') as f:
 
 setup(
     name='easy_pyoc',
-    version='0.6.1',
+    version='0.6.2',
     description='封装一些 Python 组件',
     long_description=LONG_DESCRIPTION,
     long_description_content_type='text/markdown',
@@ -35,7 +35,9 @@ setup(
         'easy_pyoc': ['qt5/res/**'],
     },
     exclude_package_data={},
-    install_requires=[],
+    install_requires=[
+        'typing_extensions',
+    ],
     extras_require={
         'easy_pyoc.qt5': ['PyQt5'],
         'utils.flask_util': ['flask'],
