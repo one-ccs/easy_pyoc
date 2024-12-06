@@ -129,7 +129,7 @@ class Config(Magic):
     def __getattr__(self, name: str):
         raise AttributeError(f'没有配置属性 "{self.__path}.{name}".')
 
-    def __getattribute__(self, name: str) -> 'Config' | Any:
+    def __getattribute__(self, name: str) -> Union['Config', Any]:
         return super().__getattribute__(name)
 
     def __setattr__(self, name: str, value: Any):
@@ -137,7 +137,7 @@ class Config(Magic):
             raise AttributeError('请使用 Config.set_config 方法设置配置属性.')
         return super().__setattr__(name, value)
 
-    def __getitem__(self, name: str | int) -> 'Config' | Any:
+    def __getitem__(self, name: str | int) -> Union['Config', Any]:
         if isinstance(name, str) and hasattr(self, name):
             return getattr(self, name)
         return self.__value[name]
