@@ -4,11 +4,12 @@ from .logger import Logger as Logger
 
 from .sock.server_socket import ServerSocket as ServerSocket
 from .sock.client_socket import ClientSocket as ClientSocket
-from .sock.use_protocol import use_WOL as use_WOL
 
 from .utils import not_this_module
+from .utils.crc_util import CRCUtil as CRCUtil
 from .utils.datetime_util import DateTimeUtil as DateTimeUtil
 from .utils.json_util import JSONUtil as JSONUtil
+from .utils.network_util import NetworkUtil as NetworkUtil
 from .utils.object_util import ObjectUtil as ObjectUtil
 from .utils.path_util import PathUtil as PathUtil
 from .utils.string_util import StringUtil as StringUtil
@@ -33,7 +34,7 @@ from .classes.magic import Magic as Magic
 from .classes.config import Config as Config
 
 
-__version__ = '0.6.2'
+__version__ = '0.7.0'
 __author__ = 'one-ccs'
 __email__ = 'one-ccs@foxmail.com'
 
@@ -42,8 +43,9 @@ __all__ = [
 
     'ServerSocket',
     'ClientSocket',
-    'use_WOL',
+    'send_WOL',
 
+    'CRCUtil',
     'DateTimeUtil',
     'FlaskUtil',
     'JSONUtil',

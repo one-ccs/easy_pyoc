@@ -65,17 +65,6 @@ def test_string_util_hti():
     assert StringUtil.hex_to_ip('00000000') == '0.0.0.0'
 
 
-def test_string_util_mth():
-    assert StringUtil.mac_to_hex('00:11:22:33:44:55') == '001122334455'
-    assert StringUtil.mac_to_hex('ff:ff:ff:ff:ff:ff') == 'ffffffffffff'
-    assert StringUtil.mac_to_hex('00:00:00:00:00:00') == '000000000000'
-
-
-def test_string_util_htm():
-    assert StringUtil.hex_to_mac('001122334455') == '00:11:22:33:44:55'
-    assert StringUtil.hex_to_mac('ffffffffffff') == 'ff:ff:ff:ff:ff:ff'
-    assert StringUtil.hex_to_mac('000000000000') == '00:00:00:00:00:00'
-
 def test_toml_util():
     import sys
 

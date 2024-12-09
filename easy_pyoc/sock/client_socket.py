@@ -99,10 +99,10 @@ class ClientSocket():
                 else:
                     self.logger.error(f'{self} 发送失败: \n{e}')
 
-    def recv(self) -> bytes | None:
+    def recv(self) -> bytes:
         if not self.__connected:
             self.logger.debug(f'{self} 未连接, 无法接收数据')
-            return None
+            return b''
 
         try:
             data, _ = self.sock.recvfrom(1024)
@@ -115,7 +115,7 @@ class ClientSocket():
                 self.logger.debug(f'{self} 接收失败连接未建立')
             else:
                 self.logger.error(f'{self} 接收失败: \n{e}')
-        return None
+        return b''
 
     def close(self) -> bool:
         if self.__connected:

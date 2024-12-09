@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from re import compile
+from string import ascii_letters, digits, hexdigits
 
 
 class StringUtil(object):
 
-    base_table = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    base_table = digits + ascii_letters
 
     @staticmethod
     def camel_to_snake(camel_str: str) -> str:
@@ -24,6 +25,11 @@ class StringUtil(object):
             return '__' + ''.join(v.title() if i > 0 else v for i, v in enumerate(components[1:]))
         components = snake_str.split('_')
         return components[0] + ''.join(v.title() for v in components[1:])
+
+    @staticmethod
+    def ishex(s: str) -> bool:
+        """判断字符串是否为 16 进制字符串。"""
+        return all(c in hexdigits for c in s) and len(s) % 2 == 0
 
     @staticmethod
     def format_hex(hex_str: str, reverse: bool = False) -> str:
@@ -95,9 +101,12 @@ class StringUtil(object):
         Returns:
             str: 转换后的 16 进制字符串.
         """
-        ip_list = ip_str.split('.')
-        hex_list = [StringUtil.int_to_str(int(i), 16, 2) for i in ip_list]
-        return ''.join(hex_list)
+        split_ip = ip_str.split('.')
+
+        if not len(split_ip) == 4 or not all(i.isdigit() and 0 <= int(i) <= 255 for i in split_ip):
+            raise ValueError(f'ip_str ({ip_str}) 格式错误')
+
+        return ''.join([StringUtil.int_to_str(int(i), 16, 2) for i in split_ip])
 
     @staticmethod
     def hex_to_ip(hex_str: str) -> str:
@@ -109,31 +118,9 @@ class StringUtil(object):
         Returns:
             str: 转换后的 IP 地址.
         """
-        hex_list = [hex_str[i:i+2] for i in range(0, len(hex_str), 2)]
-        ip_list = [StringUtil.str_to_int(i, 16) for i in hex_list]
-        return '.'.join(str(i) for i in ip_list)
+        if len(hex_str)!= 8:
+            raise ValueError(f'hex_str ({hex_str}) 长度必须为 8')
+        if not StringUtil.ishex(hex_str):
+            raise ValueError(f'hex_str ({hex_str}) 格式错误')
 
-    @staticmethod
-    def mac_to_hex(mac_str: str) -> str:
-        """将 MAC 地址转换为 16 进制字符串。
-
-        Args:
-            mac_str (str): MAC 地址.
-
-        Returns:
-            str: 转换后的 16 进制字符串.
-        """
-        return mac_str.replace(':', '')
-
-    @staticmethod
-    def hex_to_mac(hex_str: str) -> str:
-        """将 16 进制字符串转换为 MAC 地址。
-
-        Args:
-            hex_str (str): 16 进制字符串.
-
-        Returns:
-            str: 转换后的 MAC 地址.
-        """
-        hex_list = [hex_str[i:i+2] for i in range(0, len(hex_str), 2)]
-        return ':'.join(hex_list)
+        return '.'.join([str(int(hex_str[i:i+2], 16)) for i in range(0, 8, 2)])
