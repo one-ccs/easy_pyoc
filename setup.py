@@ -15,7 +15,7 @@ setup(
     author='one-ccs',
     author_email='one-ccs@foxmail.com',
     url='https://github.com/one-ccs/easy_pyoc',
-    repository='https://github.com/one-ccs/easy_pyoc',
+    repository='https://github.com/one-ccs/easy_pyoc.git',
     license='MIT',
     classifiers=[
         'Development Status :: 3 - Alpha',

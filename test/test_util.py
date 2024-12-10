@@ -40,6 +40,8 @@ def test_string_util_its16():
     assert StringUtil.int_to_str(0, base=16) == '0'
     assert StringUtil.int_to_str(0, base=16, length=5) == '00000'
     assert StringUtil.int_to_str(123456789, base=16) == '75bcd15'
+    assert StringUtil.int_to_str(123456789, base=10) == '123456789'
+    assert StringUtil.int_to_str(123456789, base=16, length=8) == '075bcd15'
 
 
 def test_string_util_sti2():

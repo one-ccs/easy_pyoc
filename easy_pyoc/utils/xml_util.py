@@ -29,7 +29,7 @@ class XMLUtil(object):
     def dumps(data: dict, encoding: str = 'unicode', *, tag: str = 'root', deep: int = ..., method: str = 'xml') -> str | bytes:
         """将字典转换为 xml 字符串
 
-        如果 encoding 为 `unicode`, 则返回 unicode 字符串, 否则返回 bytes 字符串
+        如果 encoding 为 `unicode`, 则返回字符串, 否则返回字节串
 
         Args:
             data (dict): 字典数据
@@ -165,7 +165,7 @@ class XMLUtil(object):
     def element_to_xml(element: Element, encoding: str = 'unicode', *, method: str = 'xml') -> str | bytes:
         """将 xml.etree.ElementTree.Element 对象转换为 xml 字符串
 
-        如果 encoding 为 `unicode`, 则返回 `unicode` 字符串, 否则返回 `bytes` 字符串
+        如果 encoding 为 `unicode`, 则返回字符串, 否则返回字节串
 
         Args:
             element (Element): xml.etree.ElementTree.Element 对象
@@ -181,7 +181,7 @@ class XMLUtil(object):
     def dict_to_xml(data: dict, encoding: str = 'unicode', *, tag: str = 'root', deep: int = ..., method: str = 'xml') -> str | bytes:
         """将字典转换为 xml 字符串
 
-        如果 encoding 为 `unicode`, 则返回 unicode 字符串, 否则返回 bytes 字符串
+        如果 encoding 为 `unicode`, 则返回字符串, 否则返回字节串
 
         Args:
             data (dict): 字典数据

@@ -56,7 +56,7 @@ class StringUtil(object):
         Args:
             num (int): 整数.
             base (int, optional): 进制. 默认为 10.
-            length (int, optional): 填充长度. 默认为 0.
+            length (int, optional): 填充长度. 默认为 1.
 
         Returns:
             str: 转换后的字符串.

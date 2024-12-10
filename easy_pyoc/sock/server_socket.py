@@ -1,15 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import socket
-import threading
-import multiprocessing
 from typing import Callable
+from threading import Thread
+from multiprocessing import Process
+import socket
 
 from ..logger import Logger
 
 
 class ServerSocket():
-    def __init__(self, *, protocol: str, bind: tuple[str, int], group: str | None = None, on_recv: Callable):
+    def __init__(
+            self,
+            *,
+            protocol: str,
+            bind: tuple[str, int],
+            group: str | None = None,
+            on_recv: Callable[[bytes, tuple[str, int], Callable[[bytes], int]], None],
+        ):
         """服务端套接字
 
         在新线程中创建 TCP/UDP/MULTICAST 协议的服务端套接字，接收客户端的
@@ -28,9 +35,9 @@ class ServerSocket():
 
         Args:
             protocol (str): 协议
-            bind (tuple[str, int]): 绑定的地址, 注: 当多网卡, 且 ip 为 "0.0.0.0" 时, 有可能接收不到数据.
+            bind (tuple[str, int]): 绑定的地址, 端口为 `0` 时随机分配端口, 注: 当多网卡, 且 ip 为 "0.0.0.0" 时, 有可能接收不到数据.
             group (tuple[str, int] | None, optional): 组播地址, 仅在协议类型为 "MULTICAST" 时有效. 默认为 None.
-            on_recv (Callable, optional): 接收到数据时的回调函数, 参数为 (data: bytes, client_name: str, send_back: Callable). 默认为 None.
+            on_recv (Callable, optional): 接收到数据时的回调函数, 参数为 (data: bytes, client_name: str, send_back: Callable[[bytes], int]). 默认为 None.
 
         Raises:
             ValueError: 无效的协议类型, 应为 [TCP, UDP, MULTICAST]
@@ -40,8 +47,6 @@ class ServerSocket():
             ValueError: 无效的端口号, 应为 [1-65535]
         Examples:
         """
-        self.__active = False
-
         if protocol not in ['TCP', 'UDP', 'MULTICAST']:
             raise ValueError(f'ServerSocket 无效的协议类型 "{protocol}"')
         if protocol == 'MULTICAST' and not group:
@@ -50,8 +55,12 @@ class ServerSocket():
             raise ValueError(f'ServerSocket 协议类型为 "{protocol}" 时请勿设置 group 参数')
         if not bind[0]:
             raise ValueError(f'ServerSocket 绑定地址不能为空')
-        if bind[1] < 1 or bind[1] > 65535:
+        if bind[1] < 0 or bind[1] > 65535:
             raise ValueError(f'ServerSocket 无效的端口号 "{bind[1]}"')
+        if not callable(on_recv):
+            raise ValueError(f'ServerSocket on_recv 参数必须为可调用对象')
+
+        self.__active = False
 
         self.logger = Logger()
         self.protocol = protocol
@@ -60,7 +69,7 @@ class ServerSocket():
         self.on_recv = on_recv
         self.sock: socket.socket | None = None
         self.tcp_sub_socks: list[socket.socket] = []
-        self.thread: threading.Thread | None = None
+        self.thread: Thread | Process | None = None
 
     def __str__(self) -> str:
         if self.protocol == 'MULTICAST':
@@ -90,6 +99,7 @@ class ServerSocket():
                     socket.IP_ADD_MEMBERSHIP,
                     socket.inet_aton(self.group) + socket.inet_aton(self.bind[0]),
                 )
+        self.bind = self.sock.getsockname()
 
     def __send_back(self, client_addr: tuple[str, int], client_sock: socket.socket | None = None) -> Callable:
         def send_back(data: bytes):
@@ -109,11 +119,7 @@ class ServerSocket():
                     break
 
                 self.logger.debug(f'{self} TCP 子线程 {client_addr} 接收到数据: {data}')
-                self.on_recv and self.on_recv(
-                    data=data,
-                    client_addr=client_addr,
-                    send_back=self.__send_back(client_addr, client_sock),
-                )
+                self.on_recv(data, client_addr, self.__send_back(client_addr, client_sock))
             except ConnectionResetError:
                 self.logger.debug(f'{self} TCP 子线程 {client_addr} 连接已重置')
                 break
@@ -137,16 +143,12 @@ class ServerSocket():
                         client_sock, client_addr = self.sock.accept()
                         self.logger.debug(f'{self} 与 {client_addr} 建立 TCP 连接')
                         self.tcp_sub_socks.append(client_sock)
-                        threading.Thread(target=self.__tcp_sub_thread, args=(client_sock, client_addr), daemon=True).start()
+                        Thread(target=self.__tcp_sub_thread, args=(client_sock, client_addr), daemon=True).start()
                 else:
                     data, client_addr = self.sock.recvfrom(1024)
 
                     self.logger.debug(f'{self} 收到 {client_addr} 的数据: {data}')
-                    self.on_recv and self.on_recv(
-                        data=data,
-                        client_addr=client_addr,
-                        send_back=self.__send_back(client_addr),
-                    )
+                    self.on_recv(data, client_addr, self.__send_back(client_addr))
             except Exception as e:
                 if self.is_active():
                     self.logger.error(f'{self} 主线程异常 : \n{e}')
@@ -190,9 +192,9 @@ class ServerSocket():
             return False
 
         if is_process:
-            self.thread = multiprocessing.Process(target=self.__main_thread, daemon=True)
+            self.thread = Process(target=self.__main_thread, daemon=True)
         else:
-            self.thread = threading.Thread(target=self.__main_thread, daemon=True)
+            self.thread = Thread(target=self.__main_thread, daemon=True)
         self.thread.start()
         return True
 
@@ -217,7 +219,7 @@ class ServerSocket():
                 if e.errno != 107 and e.errno != 10057:
                     raise e
             self.sock.close()
-            if isinstance(self.thread, multiprocessing.Process):
+            if isinstance(self.thread, Process):
                 self.thread.terminate()
             else:
                 self.thread.join()
