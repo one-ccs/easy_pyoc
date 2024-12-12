@@ -180,6 +180,6 @@ class NetworkUtil(object):
         for local_ip in NetworkUtil.get_local_ips():
             broadcast_host = NetworkUtil.get_broadcast_address(local_ip)
 
-            client_socket = ClientSocket(protocol="UDP", server=(broadcast_host, port), bind=(local_ip, 0))
+            client_socket = ClientSocket(protocol="UDP", target=(broadcast_host, port), bind=(local_ip, 0))
             client_socket.send(magic_packet)
             client_socket.close()

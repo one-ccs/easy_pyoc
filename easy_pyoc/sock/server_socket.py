@@ -48,6 +48,7 @@ class ServerSocket():
         Examples:
         """
         self.__active = False
+        self.__socked = False
 
         if protocol not in ['TCP', 'UDP', 'MULTICAST']:
             raise ValueError(f'ServerSocket 无效的协议类型 "{protocol}"')
@@ -77,29 +78,37 @@ class ServerSocket():
         return f'ServerSocket({self.protocol}, bind {self.bind[0]}:{self.bind[1]})'
 
     def __del__(self) -> None:
-        if self.is_active():
-            self.close()
+        self.close()
 
     def __create_socket(self) -> None:
-        match self.protocol:
-            case 'TCP':
-                self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.sock.bind(self.bind)
-                self.sock.listen(10)
-            case 'UDP':
-                self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                self.sock.bind(self.bind)
-            case 'MULTICAST':
-                self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                self.sock.bind(self.bind)
-                self.sock.setsockopt(
-                    socket.IPPROTO_IP,
-                    socket.IP_ADD_MEMBERSHIP,
-                    socket.inet_aton(self.group) + socket.inet_aton(self.bind[0]),
-                )
-        self.bind = self.sock.getsockname()
+        if self.__socked:
+            return True
+
+        try:
+            match self.protocol:
+                case 'TCP':
+                    self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    self.sock.bind(self.bind)
+                    self.sock.listen(10)
+                case 'UDP':
+                    self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                    self.sock.bind(self.bind)
+                case 'MULTICAST':
+                    self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                    self.sock.bind(self.bind)
+                    self.sock.setsockopt(
+                        socket.IPPROTO_IP,
+                        socket.IP_ADD_MEMBERSHIP,
+                        socket.inet_aton(self.group) + socket.inet_aton(self.bind[0]),
+                    )
+            self.bind = self.sock.getsockname()
+            self.__socked = True
+        except Exception as e:
+            self.logger.error(f'{self} 创建失败: \n{e}')
+
+        return self.__socked
 
     def __send_back(self, client_addr: tuple[str, int], client_sock: socket.socket | None = None) -> Callable:
         def send_back(data: bytes):
@@ -154,6 +163,18 @@ class ServerSocket():
                     self.logger.error(f'{self} 主线程异常 : \n{e}')
                     break
 
+    def getpeername(self) -> tuple[str | None, int | None]:
+        """返回套接字连接到的远程地址。"""
+        if self.__create_socket():
+            return self.sock.getpeername()
+        return (None, None)
+
+    def getsockname(self) -> tuple[str | None, int | None]:
+        """返回套接字本身的地址。"""
+        if self.__create_socket():
+            return self.sock.getsockname()
+        return (None, None)
+
     def send(self, data: bytes, client_addr: tuple[str, int]) -> int:
         """向指定客户端发送数据
 
@@ -164,15 +185,14 @@ class ServerSocket():
         Returns:
             int: 实际发送的字节数, 为 -1 表示 socket 未建立或已关闭
         """
-        if not self.is_active():
-            return -1
-
-        if self.protocol == 'TCP':
-            for client_sock in self.tcp_sub_socks:
-                if client_sock.getpeername() == client_addr:
-                    return client_sock.sendall(data)
-            return 0
-        return self.sock.sendto(data, client_addr)
+        if self.__create_socket():
+            if self.protocol == 'TCP':
+                for client_sock in self.tcp_sub_socks:
+                    if client_sock.getpeername() == client_addr:
+                        return client_sock.sendall(data)
+                return 0
+            return self.sock.sendto(data, client_addr)
+        return -1
 
     def start(self, is_process: bool = False) -> bool:
         """启动服务端
@@ -185,18 +205,15 @@ class ServerSocket():
         Returns:
             bool: 是否启动成功
         """
-        try:
-            self.__create_socket()
-        except Exception as e:
-            self.logger.error(f'{self} 创建失败: \n{e}')
-            return False
+        if not self.thread and self.__create_socket():
+            if is_process:
+                self.thread = Process(target=self.__main_thread, daemon=True)
+            else:
+                self.thread = Thread(target=self.__main_thread, daemon=True)
+            self.thread.start()
+            return True
 
-        if is_process:
-            self.thread = Process(target=self.__main_thread, daemon=True)
-        else:
-            self.thread = Thread(target=self.__main_thread, daemon=True)
-        self.thread.start()
-        return True
+        return self.is_active()
 
     def close(self) -> bool:
         """关闭服务端
@@ -204,29 +221,33 @@ class ServerSocket():
         Returns:
             bool: 是否关闭成功
         """
-        try:
-            self.__active = False
-            if self.protocol == 'TCP':
-                for client_sock in self.tcp_sub_socks:
-                    client_sock.shutdown(socket.SHUT_RDWR)
-                    client_sock.close()
-                self.tcp_sub_socks.clear()
+        if self.__socked:
             try:
-                # windows 平台 TCP 无需 shutdown (此时 shutdown 会导致 10057 错误)
-                # linux 平台非 TCP shutdown 会报 107 错误
-                self.sock.shutdown(socket.SHUT_RDWR)
-            except OSError as e:
-                if e.errno != 107 and e.errno != 10057:
-                    raise e
-            self.sock.close()
-            if isinstance(self.thread, Process):
-                self.thread.terminate()
-            else:
-                self.thread.join()
-        except Exception as e:
-            self.logger.error(f'{self} 关闭失败: \n{e}')
-            return False
-        return True
+                self.__active = False
+                if self.protocol == 'TCP':
+                    for client_sock in self.tcp_sub_socks:
+                        client_sock.shutdown(socket.SHUT_RDWR)
+                        client_sock.close()
+                    self.tcp_sub_socks.clear()
+                try:
+                    # windows 平台 TCP 无需 shutdown (此时 shutdown 会导致 10057 错误)
+                    # linux 平台非 TCP shutdown 会报 107 错误
+                    self.sock.shutdown(socket.SHUT_RDWR)
+                except OSError as e:
+                    if e.errno != 107 and e.errno != 10057:
+                        raise e
+                self.sock.close()
+                if isinstance(self.thread, Process):
+                    self.thread.terminate()
+                else:
+                    self.thread.join()
+
+                self.__socked = False
+                self.logger.debug(f'{self} 已关闭')
+            except Exception as e:
+                self.logger.error(f'{self} 关闭失败: \n{e}')
+
+        return self.__socked
 
     def is_active(self) -> bool:
         """返回服务端是否处于活动状态
@@ -234,4 +255,4 @@ class ServerSocket():
         Returns:
             bool: 是否处于活动状态
         """
-        return self.__active
+        return self.__socked and self.__active
