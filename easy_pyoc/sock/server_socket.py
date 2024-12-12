@@ -47,6 +47,8 @@ class ServerSocket():
             ValueError: 无效的端口号, 应为 [1-65535]
         Examples:
         """
+        self.__active = False
+
         if protocol not in ['TCP', 'UDP', 'MULTICAST']:
             raise ValueError(f'ServerSocket 无效的协议类型 "{protocol}"')
         if protocol == 'MULTICAST' and not group:
@@ -59,8 +61,6 @@ class ServerSocket():
             raise ValueError(f'ServerSocket 无效的端口号 "{bind[1]}"')
         if not callable(on_recv):
             raise ValueError(f'ServerSocket on_recv 参数必须为可调用对象')
-
-        self.__active = False
 
         self.logger = Logger()
         self.protocol = protocol

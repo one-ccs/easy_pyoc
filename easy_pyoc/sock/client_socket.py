@@ -34,6 +34,8 @@ class ClientSocket():
             ValueError: 无效的端口号, 应为 [1-65535]
             ValueError: 无效的绑定端口号, 应为 [1-65535]
         """
+        self.__socked   = False
+
         if protocol not in ['TCP', 'UDP', 'MULTICAST']:
             raise ValueError(f'ServerSocket 无效的协议类型 "{protocol}"')
         if server[1] < 1 or server[1] > 65535:
@@ -42,8 +44,6 @@ class ClientSocket():
             raise ValueError(f'ServerSocket 无效的绑定端口号 "{bind[1]}"')
         if on_recv and not callable(on_recv):
             raise ValueError(f'ServerSocket on_recv 必须为可调用对象')
-
-        self.__socked   = False
 
         self.logger     = Logger()
         self.protocol   = protocol
