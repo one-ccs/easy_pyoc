@@ -5,8 +5,7 @@ from threading import Thread, Event, current_thread, active_count
 
 
 class ThreadUtil:
-    tasks: dict[Thread]   = {}
-    stop_flags: dict[Event] = {}
+    tasks: dict[int, tuple[Thread, Event]] = {}
 
     @staticmethod
     def get_current_name():
@@ -42,14 +41,17 @@ class ThreadUtil:
         Returns:
             Optional[int]: 任务 id
         """
-        stop_flag = Event()
+        # 清除未活动的任务
+        need_clear = [task_id for task_id, (task, _) in ThreadUtil.tasks.items() if not task.is_alive()]
+        for task_id in need_clear:
+            ThreadUtil.tasks.pop(task_id, None)
 
+        stop_flag = Event()
         task = Thread(target=target, args=(stop_flag, *args), kwargs=kwargs, daemon=daemon)
         task.start()
 
         task_id = task.ident
-        ThreadUtil.tasks[task_id] = task
-        ThreadUtil.stop_flags[task_id] = stop_flag
+        ThreadUtil.tasks[task_id] = (task, stop_flag)
 
         return task_id
 
@@ -63,14 +65,12 @@ class ThreadUtil:
         Raises:
             ValueError: 任务不存在或已结束
         """
-        task = ThreadUtil.tasks.get(task_id)
-        stop_flag = ThreadUtil.stop_flags.get(task_id)
+        (task, stop_flag) = ThreadUtil.tasks.get(task_id, (None, None))
 
         if task and task.is_alive():
             stop_flag.set()
             task.join()
 
-            del ThreadUtil.tasks[task_id]
-            del ThreadUtil.stop_flags[task_id]
+            ThreadUtil.tasks.pop(task_id, None)
         else:
             raise ValueError(f'任务 "{task_id}" 不存在或已结束')
