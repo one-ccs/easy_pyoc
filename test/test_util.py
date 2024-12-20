@@ -4,6 +4,7 @@ import pytest, re
 
 from easy_pyoc import NetworkUtil
 from easy_pyoc import StringUtil
+from easy_pyoc import ThreadUtil
 from easy_pyoc import Config
 
 
@@ -83,6 +84,24 @@ def test_string_util():
     assert StringUtil.hex_to_ip('c0a80101') == '192.168.1.1'
     assert StringUtil.hex_to_ip('ffffffff') == '255.255.255.255'
     assert StringUtil.hex_to_ip('00000000') == '0.0.0.0'
+
+
+def test_thread_util():
+    from time import sleep
+
+    n = 0
+    def task(stop_flag):
+        nonlocal n
+
+        while not stop_flag.is_set():
+            print('running...')
+            n += 1
+            sleep(1)
+
+    task_id = ThreadUtil.execute_task(task)
+    sleep(3)
+    ThreadUtil.chancel_task(task_id)
+    assert n == 3
 
 
 def test_toml_util():
