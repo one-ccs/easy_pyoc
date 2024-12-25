@@ -30,7 +30,7 @@ class ThreadUtil:
         kwargs: Optional[Mapping[str, Any]] = None,
         daemon: bool = True,
     ) -> Optional[int]:
-        """执行一个任务
+        """执行一个任务, 该任务应该通过 stop_flag.is_set() 来判断是否需要停止.
 
         Args:
             target (Callable[[Event], None]): 运行的函数, 第一个位置参数固定为 stop_flag.
@@ -47,6 +47,8 @@ class ThreadUtil:
             ThreadUtil.tasks.pop(task_id, None)
 
         stop_flag = Event()
+        stop_flag.set()
+
         task = Thread(target=target, args=(stop_flag, *args), kwargs=kwargs, daemon=daemon)
         task.start()
 
@@ -57,7 +59,7 @@ class ThreadUtil:
 
     @staticmethod
     def chancel_task(task_id: int):
-        """取消一个任务 （设置任务的 stop_flag）
+        """取消一个任务, 并调用 stop_flag.clear()
 
         Args:
             task_id (int): 任务 id
@@ -67,10 +69,9 @@ class ThreadUtil:
         """
         (task, stop_flag) = ThreadUtil.tasks.get(task_id, (None, None))
 
-        if task and task.is_alive():
-            stop_flag.set()
-            task.join()
+        if not task:
+            raise ValueError(f'任务 "{task_id}" 不存在')
 
-            ThreadUtil.tasks.pop(task_id, None)
-        else:
-            raise ValueError(f'任务 "{task_id}" 不存在或已结束')
+        stop_flag.clear()
+        task.join()
+        ThreadUtil.tasks.pop(task_id, None)

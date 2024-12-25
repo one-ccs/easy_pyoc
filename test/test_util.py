@@ -93,7 +93,7 @@ def test_thread_util():
     def task(stop_flag):
         nonlocal n
 
-        while not stop_flag.is_set():
+        while stop_flag.is_set():
             print('running...')
             n += 1
             sleep(1)
