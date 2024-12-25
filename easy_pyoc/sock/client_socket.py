@@ -57,8 +57,8 @@ class ClientSocket():
 
     def __str__(self) -> str:
         if self.bind:
-            return f"ClientSocket({self.protocol}, {self.target[0]}:{self.target[1]}, bind {self.bind[0]}:{self.bind[1]})"
-        return f"ClientSocket({self.protocol}, {self.target[0]}:{self.target[1]})"
+            return f'ClientSocket({self.protocol}, {self.target[0]}:{self.target[1]}, bind {self.bind[0]}:{self.bind[1]})'
+        return f'ClientSocket({self.protocol}, {self.target[0]}:{self.target[1]})'
 
     def __del__(self):
         self.close()
@@ -98,7 +98,7 @@ class ClientSocket():
 
             self.__socked = True
         except ConnectionRefusedError:
-            self.logger.debug(f'{self} 无法连接: {self.target[0]}:{self.target[1]}')
+            self.logger.warning(f'{self} 无法连接: {self.target[0]}:{self.target[1]}')
         except Exception as e:
             self.logger.error(f'{self} 创建失败: \n{e}')
 

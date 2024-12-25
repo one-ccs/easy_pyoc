@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from typing import Callable
 import socket
 import ipaddress
 
+from ..sock.server_socket import ServerSocket
 from ..sock.client_socket import ClientSocket
 
 
@@ -165,6 +167,38 @@ class NetworkUtil(object):
 
         ip_network = ipaddress.ip_network(ip_network, strict=False)
         return str(ip_network.broadcast_address)
+
+    @staticmethod
+    def create_multicast_server(
+        group: tuple[str, int],
+        on_recv: Callable[[bytes, tuple[str, int], Callable[[bytes], int]], None],
+    ) -> ServerSocket:
+        """创建一个组播服务端
+
+        Args:
+            group (tuple[str, int]): 组播地址
+            on_recv (Callable[[bytes, tuple[str, int], Callable[[bytes], int]], None]): 接收到数据时的回调函数
+
+        Returns:
+            ServerSocket: 组播服务端套接字
+        """
+        return ServerSocket(protocol='MULTICAST', bind=('', group[1]), group=group[0], on_recv=on_recv)
+
+    @staticmethod
+    def create_multicast_client(
+        group: tuple[str, int],
+        on_recv: Callable[[bytes, tuple[str, int]], None],
+    ) -> ClientSocket:
+        """创建一个组播客户端
+
+        Args:
+            group (tuple[str, int]): 组播地址
+            on_recv (Callable[[bytes, tuple[str, int]], None]): 接收到数据时的回调函数
+
+        Returns:
+            ClientSocket: 组播客户端套接字
+        """
+        return ClientSocket(protocol='MULTICAST', target=group, on_recv=on_recv)
 
     @staticmethod
     def send_WOL(mac_hex: str, *, port: int = 9527) -> None:

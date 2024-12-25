@@ -2,10 +2,18 @@
 # -*- coding: utf-8 -*-
 import pytest, re
 
+from easy_pyoc import KNXUtil
 from easy_pyoc import NetworkUtil
 from easy_pyoc import StringUtil
 from easy_pyoc import ThreadUtil
 from easy_pyoc import Config
+
+
+def test_knx_util():
+    for device in KNXUtil.discover(2):
+        assert isinstance(device, KNXUtil.ControlDevice)
+        assert device.host
+        assert device.port
 
 
 def test_network_util():

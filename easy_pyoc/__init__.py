@@ -9,6 +9,7 @@ from .utils import not_this_module
 from .utils.crc_util import CRCUtil as CRCUtil
 from .utils.datetime_util import DateTimeUtil as DateTimeUtil
 from .utils.json_util import JSONUtil as JSONUtil
+from .utils.knx_util import KNXUtil as KNXUtil
 from .utils.network_util import NetworkUtil as NetworkUtil
 from .utils.object_util import ObjectUtil as ObjectUtil
 from .utils.path_util import PathUtil as PathUtil
@@ -35,7 +36,7 @@ from .classes.magic import Magic as Magic
 from .classes.config import Config as Config
 
 
-__version__ = '0.8.0'
+__version__ = '0.8.1'
 __author__ = 'one-ccs'
 __email__ = 'one-ccs@foxmail.com'
 
@@ -44,12 +45,13 @@ __all__ = [
 
     'ServerSocket',
     'ClientSocket',
-    'send_WOL',
 
     'CRCUtil',
     'DateTimeUtil',
     'FlaskUtil',
     'JSONUtil',
+    'KNXUtil',
+    'NetworkUtil',
     'ObjectUtil',
     'PathUtil',
     'StringUtil',
