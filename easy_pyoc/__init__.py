@@ -14,8 +14,9 @@ from .utils.network_util import NetworkUtil as NetworkUtil
 from .utils.object_util import ObjectUtil as ObjectUtil
 from .utils.path_util import PathUtil as PathUtil
 from .utils.string_util import StringUtil as StringUtil
-from .utils.thread_util import ThreadUtil as ThreadUtil
 from .utils.xml_util import XMLUtil as XMLUtil
+from .utils.thread_util import ThreadUtil as ThreadUtil
+from .utils.func_util import FuncUtil as FuncUtil
 
 try:
     from .utils.flask_util import FlaskUtil as FlaskUtil
@@ -36,7 +37,7 @@ from .classes.magic import Magic as Magic
 from .classes.config import Config as Config
 
 
-__version__ = '0.8.1'
+__version__ = '0.8.2'
 __author__ = 'one-ccs'
 __email__ = 'one-ccs@foxmail.com'
 
@@ -58,6 +59,8 @@ __all__ = [
     'TOMLUtil',
     'XMLUtil',
     'YAMLUtil',
+    'ThreadUtil',
+    'FuncUtil',
 
     'Magic',
     'Config',

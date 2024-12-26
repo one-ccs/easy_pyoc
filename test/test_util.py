@@ -242,11 +242,3 @@ def test_config_class():
         _.c['c1'] = 12345
     with pytest.raises(ValueError, match=re.escape('不允许修改配置项 "Config.b[0]".')):
         _.b[0] = 12345
-
-
-if __name__ == '__main__':
-    _ = Config(
-        {'a': 333, 'b': [1, [2, {'a1': 'a1'}]], 'c': {'c1': 'c1', 'c2': ['c21', 'c22']}},
-        default_map={'a': 123, 'f': 456},
-    ).set_config('d', 1).set_config('e', 2)
-    _.get_config('Config.a').value == 333
