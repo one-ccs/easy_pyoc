@@ -13,6 +13,8 @@ from .magic import Magic
 
 
 class Config(Magic):
+    """将配置文件转为 dict 并让其可以像访问对象属性一样访问配置属性"""
+
     hook = TypeVar('hook', bound=Callable[[Self, Any], Any])
 
     def __init__(
@@ -24,8 +26,7 @@ class Config(Magic):
         hook: Optional['Config.hook'] = None,
         **kw: Any,
     ):
-        """将配置文件转为 dict 并让其可以像访问对象属性一样访问配置属性
-
+        """
         Args:
             config (Union[dict, 'FileDescriptorOrPath']):
                 配置，可以是字典或文件路径.

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from .logger import Logger as Logger
+from .classes.logger import Logger as Logger
 
 from .sock.server_socket import ServerSocket as ServerSocket
 from .sock.client_socket import ClientSocket as ClientSocket
@@ -37,7 +37,7 @@ from .classes.magic import Magic as Magic
 from .classes.config import Config as Config
 
 
-__version__ = '0.8.2'
+__version__ = '0.8.3'
 __author__ = 'one-ccs'
 __email__ = 'one-ccs@foxmail.com'
 

@@ -4,7 +4,7 @@ from ..utils.object_util import ObjectUtil
 
 
 class Magic(object):
-    """魔法类，用于实现 __str__、__repr__、__call__ 方法"""
+    """魔法类，简单实现了 __str__、__repr__、__call__ 方法"""
     _str_exclude = {}
     _repr_exclude = {}
     _call_exclude = {}

@@ -5,7 +5,7 @@ from threading import Thread
 from multiprocessing import Process
 import socket
 
-from ..logger import Logger
+from ..classes.logger import Logger
 
 
 class ClientSocket():

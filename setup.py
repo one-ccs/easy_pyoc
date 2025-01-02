@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from setuptools import setup, find_packages
+from easy_pyoc import __version__, __author__, __email__
 
 
 with open('README.md', 'r', encoding='utf-8') as f:
@@ -8,12 +9,12 @@ with open('README.md', 'r', encoding='utf-8') as f:
 
 setup(
     name='easy_pyoc',
-    version='0.8.2',
-    description='封装一些 Python 组件',
+    version=__version__,
+    description='封装一些 Python 小工具，提升开发效率。',
     long_description=LONG_DESCRIPTION,
     long_description_content_type='text/markdown',
-    author='one-ccs',
-    author_email='one-ccs@foxmail.com',
+    author=__author__,
+    author_email=__email__,
     url='https://github.com/one-ccs/easy_pyoc',
     repository='https://github.com/one-ccs/easy_pyoc.git',
     license='MIT',
