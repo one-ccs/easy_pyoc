@@ -37,7 +37,7 @@ from .classes.magic import Magic as Magic
 from .classes.config import Config as Config
 
 
-__version__ = '0.8.4'
+__version__ = '0.8.5'
 __author__ = 'one-ccs'
 __email__ = 'one-ccs@foxmail.com'
 
