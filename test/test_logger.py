@@ -6,7 +6,7 @@ from easy_pyoc import Logger
 def test_logger():
     logger1 = Logger()
     logger2 = Logger()
-    logger3 = Logger('test')
+    logger3 = Logger('test', '%(message)s')
 
     assert logger1 is logger2
     assert logger1 is not logger3
