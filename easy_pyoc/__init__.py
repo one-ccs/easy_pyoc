@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from .classes.logger import Logger as Logger
+from .classes.magic import Magic as Magic
+from .classes.config import Config as Config
+from .classes.color import AnsiColor as AnsiColor
 
 from .sock.server_socket import ServerSocket as ServerSocket
 from .sock.client_socket import ClientSocket as ClientSocket
@@ -33,16 +36,17 @@ try:
 except ImportError as e:
     YAMLUtil = not_this_module('YAMLUtil', e.msg)
 
-from .classes.magic import Magic as Magic
-from .classes.config import Config as Config
 
 
-__version__ = '0.8.5'
+__version__ = '0.8.6'
 __author__ = 'one-ccs'
 __email__ = 'one-ccs@foxmail.com'
 
 __all__ = [
     'Logger',
+    'Magic',
+    'Config',
+    'AnsiColor',
 
     'ServerSocket',
     'ClientSocket',
@@ -61,7 +65,4 @@ __all__ = [
     'YAMLUtil',
     'ThreadUtil',
     'FuncUtil',
-
-    'Magic',
-    'Config',
 ]
