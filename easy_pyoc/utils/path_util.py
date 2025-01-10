@@ -3,12 +3,28 @@
 from typing import TYPE_CHECKING
 from pathlib import Path
 from contextlib import contextmanager
+import sys
+import os
+
 
 if TYPE_CHECKING:
     from _typeshed import FileDescriptorOrPath
 
 
 class PathUtil(object):
+    """路径工具类"""
+
+    sys_path = sys.path
+
+    @staticmethod
+    def get_work_dir() -> str:
+        """获取工作目录"""
+        return os.getcwd()
+
+    @staticmethod
+    def set_work_dir(path: 'FileDescriptorOrPath') -> None:
+        """设置工作目录"""
+        os.chdir(path)
 
     @staticmethod
     def get_project_root(root_name: str, join_path: str | None = None) -> str:
