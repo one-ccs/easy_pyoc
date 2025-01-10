@@ -20,6 +20,7 @@ from .utils.string_util import StringUtil as StringUtil
 from .utils.xml_util import XMLUtil as XMLUtil
 from .utils.thread_util import ThreadUtil as ThreadUtil
 from .utils.func_util import FuncUtil as FuncUtil
+from .utils.package_util import PackageUtil as PackageUtil
 
 try:
     from .utils.flask_util import FlaskUtil as FlaskUtil
@@ -37,8 +38,7 @@ except ImportError as e:
     YAMLUtil = not_this_module('YAMLUtil', e.msg)
 
 
-
-__version__ = '0.8.7'
+__version__ = PackageUtil.get_version('easy_pyoc')
 __author__ = 'one-ccs'
 __email__ = 'one-ccs@foxmail.com'
 
@@ -65,4 +65,5 @@ __all__ = [
     'YAMLUtil',
     'ThreadUtil',
     'FuncUtil',
+    'PackageUtil',
 ]
