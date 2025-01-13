@@ -34,11 +34,13 @@ class AnsiColor:
 
     def __str__(self):
         color = '\033['
+
         if self.fore_color:
             color += str(self.fore_color)
         if self.back_color:
             color += ';' + str(self.back_color)
-        if self.bold:
-            color += ';1'
+
+        color += ';1' if self.bold else ';0'
         color +='m'
+
         return color
