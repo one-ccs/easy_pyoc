@@ -82,7 +82,6 @@ class FuncUtil(object):
                 try:
                     return func(*args, **kwargs)
                 except Exception as e:
-
                     fmt_exc = format_exc()
                     _, exc = fmt_exc.split('\n')[-3:-1]
 

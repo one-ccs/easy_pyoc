@@ -27,19 +27,6 @@ class PathUtil(object):
         os.chdir(path)
 
     @staticmethod
-    def get_project_root(root_name: str, join_path: str | None = None) -> str:
-        """返回项目根目录的绝对地址
-
-        :param root_name 跟文件夹名称
-        :param join_path 拼接路径
-        """
-        root_path = __file__[:__file__.index(root_name) + len(root_name)]
-
-        if join_path:
-            return str(Path(root_path).joinpath(join_path))
-        return root_path
-
-    @staticmethod
     def abspath(path: str = '') -> str:
         """返回路径的绝对路径"""
         return str(Path(path).absolute())

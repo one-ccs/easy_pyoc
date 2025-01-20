@@ -7,6 +7,7 @@ from easy_pyoc import NetworkUtil
 from easy_pyoc import StringUtil
 from easy_pyoc import ThreadUtil
 from easy_pyoc import Config
+from easy_pyoc import ExceptionUtil
 
 
 def test_knx_util():
@@ -242,3 +243,10 @@ def test_config_class():
         _.c['c1'] = 12345
     with pytest.raises(ValueError, match=re.escape('不允许修改配置项 "Config.b[0]".')):
         _.b[0] = 12345
+
+
+def test_exception_util():
+    try:
+        raise ValueError('值错误')
+    except:
+        assert ExceptionUtil.get_message() == 'ValueError: 值错误'
