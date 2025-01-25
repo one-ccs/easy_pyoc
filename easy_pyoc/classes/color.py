@@ -4,43 +4,27 @@
 class AnsiColor:
     """控制台 ASCII 颜色类"""
 
-    FORE_BLACK   = 30
-    FORE_RED     = 31
-    FORE_GREEN   = 32
-    FORE_YELLOW  = 33
-    FORE_BLUE    = 34
-    FORE_MAGENTA = 35
-    FORE_CYAN    = 36
-    FORE_WHITE   = 37
-    FORE_RESET   = 39
+    FORE_BLACK   = '\033[30m'
+    FORE_RED     = '\033[31m'
+    FORE_GREEN   = '\033[32m'
+    FORE_YELLOW  = '\033[33m'
+    FORE_BLUE    = '\033[34m'
+    FORE_MAGENTA = '\033[35m'
+    FORE_CYAN    = '\033[36m'
+    FORE_WHITE   = '\033[37m'
+    FORE_RESET   = '\033[39m'
 
-    BACK_BLACK   = 40
-    BACK_RED     = 41
-    BACK_GREEN   = 42
-    BACK_YELLOW  = 43
-    BACK_BLUE    = 44
-    BACK_MAGENTA = 45
-    BACK_CYAN    = 46
-    BACK_WHITE   = 47
-    BACK_RESET   = 49
+    BACK_BLACK   = '\033[40m'
+    BACK_RED     = '\033[41m'
+    BACK_GREEN   = '\033[42m'
+    BACK_YELLOW  = '\033[43m'
+    BACK_BLUE    = '\033[44m'
+    BACK_MAGENTA = '\033[45m'
+    BACK_CYAN    = '\033[46m'
+    BACK_WHITE   = '\033[47m'
+    BACK_RESET   = '\033[49m'
 
-    def __init__(self, fore_color: int | None = None, back_color: int | None = None, bold: bool = False):
-        if fore_color is None and back_color is None:
-            raise ValueError('前景色和背景色不能同时为空')
-
-        self.fore_color = fore_color
-        self.back_color = back_color
-        self.bold = bold
-
-    def __str__(self):
-        color = '\033['
-
-        if self.fore_color:
-            color += str(self.fore_color)
-        if self.back_color:
-            color += ';' + str(self.back_color)
-
-        color += ';1' if self.bold else ';0'
-        color +='m'
-
-        return color
+    RESET_ALL    = '\033[00m'
+    BOLD         = '\033[01m'
+    DIM          = '\033[02m'
+    NORMAL       = '\033[22m'

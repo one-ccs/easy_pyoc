@@ -9,7 +9,7 @@ with open('README.md', 'r', encoding='utf-8') as f:
 
 setup(
     name='easy_pyoc',
-    version='0.9.0',
+    version='0.9.1',
     description='封装一些 Python 小工具，提升开发效率。',
     long_description=LONG_DESCRIPTION,
     long_description_content_type='text/markdown',
