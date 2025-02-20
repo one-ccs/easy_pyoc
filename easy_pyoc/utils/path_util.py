@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar, Optional
 from pathlib import Path
 from contextlib import contextmanager
 import sys
@@ -11,10 +11,19 @@ if TYPE_CHECKING:
     from _typeshed import FileDescriptorOrPath
 
 
+T = TypeVar('T')
+
+
 class PathUtil(object):
     """路径工具类"""
 
+    Path = Path
     sys_path = sys.path
+
+    @staticmethod
+    def get_env(key: str, default: Optional[T] = None) -> str | T:
+        """获取环境变量"""
+        return os.getenv(key, default)
 
     @staticmethod
     def get_work_dir() -> str:
@@ -25,6 +34,17 @@ class PathUtil(object):
     def set_work_dir(path: 'FileDescriptorOrPath') -> None:
         """设置工作目录"""
         os.chdir(path)
+
+    @staticmethod
+    def get_home_dir() -> Path:
+        """获取用户目录"""
+        return Path.home()
+
+    @staticmethod
+    def get_dir(path: str) -> Path:
+        """获取路径的目录"""
+        p = Path(path)
+        return p if p.is_dir() else p.parent
 
     @staticmethod
     def abspath(path: str = '') -> str:
