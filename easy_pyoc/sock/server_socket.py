@@ -128,7 +128,10 @@ class ServerSocket():
                     break
 
                 self.logger.debug(f'{self} TCP 子线程 {client_addr} 接收到数据: {data}')
-                self.on_recv(data, client_addr, self.__send_back(client_addr, client_sock))
+                try:
+                    self.on_recv(data, client_addr, self.__send_back(client_addr, client_sock))
+                except Exception as e:
+                    self.logger.error(f'{self} TCP 子线程 {client_addr} "on_recv" 回调函数发生异常: \n{e}')
             except ConnectionResetError:
                 self.logger.debug(f'{self} TCP 子线程 {client_addr} 连接已重置')
                 break
@@ -157,7 +160,10 @@ class ServerSocket():
                     data, client_addr = self.sock.recvfrom(1024)
 
                     self.logger.debug(f'{self} 收到 {client_addr} 的数据: {data}')
-                    self.on_recv(data, client_addr, self.__send_back(client_addr))
+                    try:
+                        self.on_recv(data, client_addr, self.__send_back(client_addr))
+                    except Exception as e:
+                        self.logger.error(f'{self} 主线程 "on_recv" 回调函数发生异常: \n{e}')
             except Exception as e:
                 if self.is_active():
                     self.logger.error(f'{self} 主线程异常 : \n{e}')

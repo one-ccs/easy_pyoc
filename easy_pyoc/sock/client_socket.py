@@ -16,6 +16,7 @@ class ClientSocket():
             target: tuple[str, int],
             bind: tuple[str, int] | None = None,
             on_recv: Callable[[bytes, tuple[str, int]], None] | None = None,
+            timeout: float = 5.0,
             is_process: bool = False,
         ):
         """客户端套接字
@@ -27,6 +28,7 @@ class ClientSocket():
             target (tuple[str, int]): 服务器地址和端口
             bind (tuple[str, int] | None, optional): 绑定地址, 端口为 `0` 时随机分配端口. 默认为 None.
             on_recv (Callable[[tuple[str, int], bytes], None] | None, optional): 接收到数据时的回调函数, 参数为 (数据, 地址). 默认为 None.
+            timeout (float, optional): TCP 连接超时时间, 单位为秒. 默认为 5.0.
             is_process (bool, optional): 是否使用进程模式接收数据, 即在子进程中运行. 默认为 False.
 
         Raises:
@@ -51,6 +53,7 @@ class ClientSocket():
         self.target     = target
         self.bind       = bind
         self.on_recv    = on_recv
+        self.timeout    = timeout
         self.is_process = is_process
         self.sock: socket.socket | None = None
         self.thread: Thread | Process | None = None
@@ -73,6 +76,7 @@ class ClientSocket():
                     self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     if self.bind:
                         self.sock.bind(self.bind)
+                    self.sock.settimeout(self.timeout)
                     self.sock.connect((self.target[0], self.target[1]))
                 case 'UDP':
                     self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -112,7 +116,10 @@ class ClientSocket():
                 data, addr = self.sock.recvfrom(1024)
 
                 self.logger.debug(f'{self} 收到 {addr} 的数据: {data}')
-                self.on_recv(data, addr)
+                try:
+                    self.on_recv(data, addr)
+                except Exception as e:
+                    self.logger.error(f'{self} "on_recv" 回调函数发生异常: \n{e}')
             except OSError as e:
                 if e.errno == 10057:
                     self.logger.debug(f'{self} 接收失败连接未建立')
