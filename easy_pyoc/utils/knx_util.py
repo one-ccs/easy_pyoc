@@ -9,17 +9,23 @@ from .string_util import StringUtil
 from .network_util import NetworkUtil
 
 
-KNX_PORT      = 3671
-KNX_MULTICAST = ('224.0.23.12', KNX_PORT)
-KNX_MX        = 2
-H_S_REQ_EXT   = b'\x02\x0b'
-H_S_REQ       = b'\x02\x01'
-H_S_RES       = b'\x02\x02'
-DIBS          = b'\x08\x04\x01\x02\x08\x06\x07\x00'
-
-
 class KNXUtil(object):
     """KNXnet/IP 工具类"""
+
+    KNX_PORT      = 3671
+    """KNXnet/IP 端口号"""
+    KNX_MULTICAST = ('224.0.23.12', KNX_PORT)
+    """KNXnet/IP 多播地址"""
+    KNX_MX        = 2
+    """KNXnet/IP 多播 TTL"""
+    H_S_REQ_EXT   = b'\x02\x0b'
+    """KNXnet/IP 发现请求扩展头"""
+    H_S_REQ       = b'\x02\x01'
+    """KNXnet/IP 发现请求头"""
+    H_S_RES       = b'\x02\x02'
+    """KNXnet/IP 发现响应头"""
+    DIBS          = b'\x08\x04\x01\x02\x08\x06\x07\x00'
+    """KNXnet/IP 发现请求 DIBS"""
 
     @dataclass
     class ControlDevice(object):
@@ -82,14 +88,14 @@ def _make_hpai(ip: str, port: int) -> bytes:
 
 def _scan(timeout: int = 5):
     stop_wait = datetime.now() + timedelta(seconds=timeout)
-    h_s_req_ext = _make_header(H_S_REQ_EXT, 22)
-    h_s_req     = _make_header(H_S_REQ, 14)
+    h_s_req_ext = _make_header(KNXUtil.H_S_REQ_EXT, 22)
+    h_s_req     = _make_header(KNXUtil.H_S_REQ, 14)
 
     sockets: list[socket.socket] = []
     for ip in NetworkUtil.get_local_ips():
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, KNX_MX)
+            sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, KNXUtil.KNX_MX)
             sock.bind((ip, 0))
             sockets.append(sock)
         except socket.error:
@@ -97,10 +103,10 @@ def _scan(timeout: int = 5):
 
     for sock in sockets:
         hpai_de = _make_hpai(*sock.getsockname())
-        knx_s_reqs = [h_s_req_ext + hpai_de + DIBS, h_s_req + hpai_de]
+        knx_s_reqs = [h_s_req_ext + hpai_de + KNXUtil.DIBS, h_s_req + hpai_de]
         try:
             for req in knx_s_reqs:
-                sock.sendto(req, KNX_MULTICAST)
+                sock.sendto(req, KNXUtil.KNX_MULTICAST)
             sock.setblocking(False)
         except socket.error:
             sockets.remove(sock)

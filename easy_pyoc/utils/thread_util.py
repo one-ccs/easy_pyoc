@@ -5,7 +5,9 @@ from threading import Thread, Event, current_thread, active_count
 
 
 class ThreadUtil:
+
     tasks: dict[int, tuple[Thread, Event]] = {}
+    """任务字典, key 为任务 id, value 为 (任务对象, 停止事件) """
 
     @staticmethod
     def get_current_name():

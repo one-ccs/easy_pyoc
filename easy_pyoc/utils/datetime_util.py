@@ -6,6 +6,7 @@ from datetime import timedelta, datetime, timezone
 class DateTimeUtil(object):
 
     timedelta = timedelta
+    """等价于 datetime.timedelta"""
 
     @staticmethod
     def now() -> datetime:

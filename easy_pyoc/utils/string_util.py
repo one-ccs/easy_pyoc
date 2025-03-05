@@ -7,6 +7,7 @@ from string import ascii_letters, digits, hexdigits
 class StringUtil(object):
 
     base_table = digits + ascii_letters
+    """基础字符表"""
 
     @staticmethod
     def camel_to_snake(camel_str: str) -> str:

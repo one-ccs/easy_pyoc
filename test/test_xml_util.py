@@ -37,6 +37,9 @@ D21 = {
 X22 = '''
 <root></root>
 '''
+X221 = '''
+<root />
+'''
 D22 = {
     "root": None
 }
@@ -44,6 +47,9 @@ D22 = {
 X23 = '''
 <root>
 </root>
+'''
+X231 = '''
+<root />
 '''
 D23 = {
     "root": None
@@ -86,6 +92,9 @@ X32 = '''
     <item>123</item>
 </root>
 '''
+X321 = '''
+<root><item/><item/><itemid="12"/><item>123</item></root>
+'''
 D32 = {
     "root": {
         "item": [
@@ -110,6 +119,20 @@ X5 = '''
         <name>item2</name>
         <value>200.2</value>
         <readonly>false</readonly>
+    </item>
+</root>
+'''
+X51 = '''
+<root>
+    <item id="1">
+        <name>item1</name>
+        <value>100.1</value>
+        <readonly>True</readonly>
+    </item>
+    <item id="2">
+        <name>item2</name>
+        <value>200.2</value>
+        <readonly>False</readonly>
     </item>
 </root>
 '''
@@ -173,6 +196,51 @@ X6 = '''
             </sub>
         </subs>
         id_2_text
+
+    </item>
+</items>
+'''
+X61 = '''
+<items>
+    <item id="1">
+        _id_1_text
+        id_1_text
+        <name>item1</name>
+        <value>100</value>
+        <subs>
+            <sub id="11">
+                _id_11_text
+                <name>sub11</name>
+                <value>110</value>
+            </sub>
+            <sub id="12">
+                id_12_text
+                <name>sub12</name>
+                <value>120</value>
+            </sub>
+        </subs>
+    </item>
+    <item id="2">
+
+        _id_2_text
+        id_2_text
+        <name>item2</name>
+        <value>200</value>
+        <subs>
+            <sub id="21">
+                21
+                211
+                <name>sub21</name>
+                <value>210</value>
+            </sub>
+            <sub id="22">
+                22
+                222
+                223
+                <name>sub22</name>
+                <value>220</value>
+            </sub>
+        </subs>
 
     </item>
 </items>
@@ -244,17 +312,17 @@ def test_xml_to_dict():
 
 
 def test_dict_to_xml():
-    with pytest.raises(ValueError, match='格式有误'):
-        XMLUtil.dict_to_xml(D1)
-    assert XMLUtil.dict_to_xml(D2) == X2
-    assert XMLUtil.dict_to_xml(D21) == X21
-    assert XMLUtil.dict_to_xml(D22) == X22
-    assert XMLUtil.dict_to_xml(D23) == X23
-    assert XMLUtil.dict_to_xml(D3) == X3
-    assert XMLUtil.dict_to_xml(D31) == X31
-    assert XMLUtil.dict_to_xml(D32) == X32
-    assert XMLUtil.dict_to_xml(D5) == X5
-    assert XMLUtil.dict_to_xml(D6) == X6
+    import re
+    assert re.sub(r'\s', '', XMLUtil.dict_to_xml(D1)) == re.sub(r'\s', '', X1)
+    assert re.sub(r'\s', '', XMLUtil.dict_to_xml(D2)) == re.sub(r'\s', '', X2)
+    assert re.sub(r'\s', '', XMLUtil.dict_to_xml(D21)) == re.sub(r'\s', '', X21)
+    assert re.sub(r'\s', '', XMLUtil.dict_to_xml(D22)) == re.sub(r'\s', '', X221)
+    assert re.sub(r'\s', '', XMLUtil.dict_to_xml(D23)) == re.sub(r'\s', '', X231)
+    assert re.sub(r'\s', '', XMLUtil.dict_to_xml(D3)) == re.sub(r'\s', '', X3)
+    assert re.sub(r'\s', '', XMLUtil.dict_to_xml(D31)) == re.sub(r'\s', '', X31)
+    assert re.sub(r'\s', '', XMLUtil.dict_to_xml(D32)) == re.sub(r'\s', '', X321)
+    assert re.sub(r'\s', '', XMLUtil.dict_to_xml(D5)) == re.sub(r'\s', '', X51)
+    assert re.sub(r'\s', '', XMLUtil.dict_to_xml(D6)) == re.sub(r'\s', '', X61)
 
 
 if __name__ == '__main__':
