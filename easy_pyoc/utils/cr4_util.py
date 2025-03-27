@@ -5,22 +5,23 @@ class CR4Util:
     """CR4 算法工具类"""
 
     @staticmethod
-    def cr4(key: bytes, data: str | bytes, encoding: str = 'utf-8') -> str | bytes:
+    def cr4(key: str | bytes, data: str | bytes, encoding: str = 'utf-8') -> str | bytes:
         """使用 CR4 算法加密 (str) 或解密 (bytes) 数据
 
         Args:
-            key (bytes): 密钥
+            key (str | bytes): 密钥
             data (str | bytes): 待加密或解密的数据
             encoding (str, optional): 编码格式. 默认为 'utf-8'.
 
         Returns:
             str | bytes: 加密 (bytes) 或解密 (str) 后的数据
         """
+        _key = bytes(key, encoding) if isinstance(key, str) else key
         _data = bytes(data, encoding) if isinstance(data, str) else data
 
         S, j = list(range(256)), 0
         for i in range(256):
-            j = (j + S[i] + key[i % len(key)]) % 256
+            j = (j + S[i] + _key[i % len(_key)]) % 256
             S[i], S[j] = S[j], S[i]
 
         i, j, result = 0, 0, []
@@ -33,11 +34,11 @@ class CR4Util:
         return bytes(result) if isinstance(data, str) else bytes(result).decode(encoding)
 
     @staticmethod
-    def encrypt(key: bytes, data: str, encoding: str = 'utf-8') -> bytes:
+    def encrypt(key: str | bytes, data: str, encoding: str = 'utf-8') -> bytes:
         """加密数据
 
         Args:
-            key (bytes): 密钥
+            key (str | bytes): 密钥
             data (str): 待加密的数据
             encoding (str, optional): 编码格式. 默认为 'utf-8'.
 
@@ -47,11 +48,11 @@ class CR4Util:
         return CR4Util.cr4(key, data, encoding)
 
     @staticmethod
-    def decrypt(key: bytes, data: bytes, encoding: str = 'utf-8') -> str:
+    def decrypt(key: str | bytes, data: bytes, encoding: str = 'utf-8') -> str:
         """解密数据
 
         Args:
-            key (bytes): 密钥
+            key (str | bytes): 密钥
             data (bytes): 待解密的数据
             encoding (str, optional): 编码格式. 默认为 'utf-8'.
 

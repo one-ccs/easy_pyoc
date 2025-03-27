@@ -254,7 +254,7 @@ def test_exception_util():
 
 
 def test_cr4_util():
-    key = b'secret_key'
+    key = 'secret_key'
     d_data = 'hello, world!'
     e_data = b'+Z\xf7\xcd\xafy\xcbQ&\x92\xd8\x0f\xe6'
 
@@ -262,3 +262,8 @@ def test_cr4_util():
     assert CR4Util.cr4(key, e_data) == d_data
     assert CR4Util.encrypt(key, d_data) == e_data
     assert CR4Util.decrypt(key, e_data) == d_data
+
+    assert CR4Util.cr4(bytes(key, 'utf-8'), d_data) == e_data
+    assert CR4Util.cr4(bytes(key, 'utf-8'), e_data) == d_data
+    assert CR4Util.encrypt(bytes(key, 'utf-8'), d_data) == e_data
+    assert CR4Util.decrypt(bytes(key, 'utf-8'), e_data) == d_data
