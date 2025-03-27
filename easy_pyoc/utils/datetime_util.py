@@ -4,6 +4,7 @@ from datetime import timedelta, datetime, timezone
 
 
 class DateTimeUtil(object):
+    """日期时间工具类"""
 
     timedelta = timedelta
     """等价于 datetime.timedelta"""

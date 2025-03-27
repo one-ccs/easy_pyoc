@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 class CRCUtil(object):
+    """CRC 校验工具类"""
 
     def crc16_xmodem(data: bytes, polynomial: int = 0x1021) -> int:
         """计算给定数据的 CRC16-XMODEM 校验值。

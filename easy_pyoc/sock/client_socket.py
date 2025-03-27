@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from typing import Callable
+from typing import Callable, Literal
 from threading import Thread
 from multiprocessing import Process
 import socket
@@ -12,7 +12,7 @@ class ClientSocket():
     def __init__(
             self,
             *,
-            protocol: str,
+            protocol: Literal['TCP', 'UDP', 'MULTICAST'],
             target: tuple[str, int],
             bind: tuple[str, int] | None = None,
             on_recv: Callable[[bytes, tuple[str, int]], None] | None = None,

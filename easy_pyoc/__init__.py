@@ -22,6 +22,7 @@ from .utils.thread_util import ThreadUtil as ThreadUtil
 from .utils.func_util import FuncUtil as FuncUtil
 from .utils.package_util import PackageUtil as PackageUtil
 from .utils.exception_util import ExceptionUtil as ExceptionUtil
+from .utils.cr4_util import CR4Util as CR4Util
 
 try:
     from .utils.flask_util import FlaskUtil as FlaskUtil
@@ -68,4 +69,5 @@ __all__ = [
     'FuncUtil',
     'PackageUtil',
     'ExceptionUtil',
+    'CR4Util',
 ]

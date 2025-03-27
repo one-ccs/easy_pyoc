@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from typing import Callable
+from typing import Callable, Literal
 from threading import Thread
 from multiprocessing import Process
+from selectors import DefaultSelector, EVENT_READ, EVENT_WRITE
 import socket
 
 from ..classes.logger import Logger
@@ -12,7 +13,7 @@ class ServerSocket():
     def __init__(
             self,
             *,
-            protocol: str,
+            protocol: Literal['TCP', 'UDP', 'MULTICAST'],
             bind: tuple[str, int],
             group: str | None = None,
             on_recv: Callable[[bytes, tuple[str, int], Callable[[bytes], int]], None],
@@ -152,10 +153,10 @@ class ServerSocket():
         while self.is_active():
             try:
                 if self.protocol == 'TCP':
-                        client_sock, client_addr = self.sock.accept()
-                        self.logger.debug(f'{self} 与 {client_addr} 建立 TCP 连接')
-                        self.tcp_sub_socks.append(client_sock)
-                        Thread(target=self.__tcp_sub_thread, args=(client_sock, client_addr), daemon=True).start()
+                    client_sock, client_addr = self.sock.accept()
+                    self.logger.debug(f'{self} 与 {client_addr} 建立 TCP 连接')
+                    self.tcp_sub_socks.append(client_sock)
+                    Thread(target=self.__tcp_sub_thread, args=(client_sock, client_addr), daemon=True).start()
                 else:
                     data, client_addr = self.sock.recvfrom(1024)
 

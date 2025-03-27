@@ -8,6 +8,7 @@ from easy_pyoc import StringUtil
 from easy_pyoc import ThreadUtil
 from easy_pyoc import Config
 from easy_pyoc import ExceptionUtil
+from easy_pyoc import CR4Util
 
 
 def test_knx_util():
@@ -250,3 +251,14 @@ def test_exception_util():
         raise ValueError('值错误')
     except:
         assert ExceptionUtil.get_message() == 'ValueError: 值错误'
+
+
+def test_cr4_util():
+    key = b'secret_key'
+    d_data = 'hello, world!'
+    e_data = b'+Z\xf7\xcd\xafy\xcbQ&\x92\xd8\x0f\xe6'
+
+    assert CR4Util.cr4(key, d_data) == e_data
+    assert CR4Util.cr4(key, e_data) == d_data
+    assert CR4Util.encrypt(key, d_data) == e_data
+    assert CR4Util.decrypt(key, e_data) == d_data
