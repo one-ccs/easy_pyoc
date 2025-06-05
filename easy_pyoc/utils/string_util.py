@@ -62,7 +62,7 @@ class StringUtil(object):
         Returns:
             str: 转换后的字符串.
         """
-        result = ''
+        num, base, length, result = int(num), int(base), int(length), ''
 
         if num == 0:
             result = '0' * length
@@ -90,7 +90,7 @@ class StringUtil(object):
         Returns:
             int: 转换后的整数.
         """
-        return int(string, base)
+        return int(string, int(base))
 
     @staticmethod
     def ip_to_hex(ip_str: str) -> str:
