@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 from typing import Callable, Literal
 from threading import Thread
 from multiprocessing import Process
@@ -15,8 +13,9 @@ class ClientSocket():
             protocol: Literal['TCP', 'UDP', 'MULTICAST'],
             target: tuple[str, int],
             bind: tuple[str, int] | None = None,
+            bufsize: int = 1024,
             on_recv: Callable[[bytes, tuple[str, int]], None] | None = None,
-            timeout: float = 5.0,
+            timeout: float | None = None,
             is_process: bool = False,
         ):
         """客户端套接字
@@ -27,8 +26,9 @@ class ClientSocket():
             protocol (str): 协议
             target (tuple[str, int]): 服务器地址和端口
             bind (tuple[str, int] | None, optional): 绑定地址, 端口为 `0` 时随机分配端口. 默认为 None.
+            bufsize (int, optional): 接收缓冲区大小. 默认为 1024.
             on_recv (Callable[[tuple[str, int], bytes], None] | None, optional): 接收到数据时的回调函数, 参数为 (数据, 地址). 默认为 None.
-            timeout (float, optional): TCP 连接超时时间, 单位为秒. 默认为 5.0.
+            timeout (float | None, optional): TCP 连接超时时间, 单位为秒. 默认为 None.
             is_process (bool, optional): 是否使用进程模式接收数据, 即在子进程中运行. 默认为 False.
 
         Raises:
@@ -53,6 +53,7 @@ class ClientSocket():
         self.target     = target
         self.bind       = bind
         self.on_recv    = on_recv
+        self.bufsize    = bufsize
         self.timeout    = timeout
         self.is_process = is_process
         self.sock: socket.socket | None = None
@@ -113,7 +114,7 @@ class ClientSocket():
 
         while self.__active:
             try:
-                data, addr = self.sock.recvfrom(1024)
+                data, addr = self.sock.recvfrom(self.bufsize)
 
                 self.logger.debug(f'{self} 收到 {addr} 的数据: {data}')
                 try:

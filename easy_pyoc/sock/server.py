@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 from typing import Callable, Literal
 from threading import Thread
 from multiprocessing import Process
@@ -17,6 +15,8 @@ class ServerSocket():
             bind: tuple[str, int],
             group: str | None = None,
             on_recv: Callable[[bytes, tuple[str, int], Callable[[bytes], int]], None],
+            bufsize: int = 1024,
+            timeout: float | None = None,
         ):
         """服务端套接字
 
@@ -36,15 +36,15 @@ class ServerSocket():
 
         Args:
             protocol (str): 协议
-            bind (tuple[str, int]): 绑定的地址, 端口为 `0` 时随机分配端口, 注: 当多网卡, 且 ip 为 "0.0.0.0" 时, 有可能接收不到数据.
+            bind (tuple[str, int]): 绑定的地址, 端口为 `0` 时随机分配端口, 注: 当多网卡, 且 ip 为 "0.0.0.0" 时, 有可能接收不到数据；当协议为 `MULTICAST` 时, 绑定地址建议为 `''` 或 `'0.0.0.0'`, 否则有可能收不到数据.
             group (tuple[str, int] | None, optional): 组播地址, 仅在协议类型为 "MULTICAST" 时有效. 默认为 None.
             on_recv (Callable, optional): 接收到数据时的回调函数, 参数为 (data: bytes, client_name: str, send_back: Callable[[bytes], int]). 默认为 None.
+            bufsize (int, optional): 接收缓冲区大小, 默认为 1024.
 
         Raises:
             ValueError: 无效的协议类型, 应为 [TCP, UDP, MULTICAST]
             ValueError: 组播协议必须指定组播地址
             ValueError: 协议类型为非 "MULTICAST" 时请勿设置 group 参数
-            ValueError: 绑定地址 (bind[0]) 不能为空
             ValueError: 无效的端口号, 应为 [1-65535]
         Examples:
         """
@@ -57,18 +57,18 @@ class ServerSocket():
             raise ValueError(f'ServerSocket 组播协议必须指定组播地址')
         if protocol != 'MULTICAST' and group:
             raise ValueError(f'ServerSocket 协议类型为 "{protocol}" 时请勿设置 group 参数')
-        if not bind[0]:
-            raise ValueError(f'ServerSocket 绑定地址不能为空')
         if bind[1] < 0 or bind[1] > 65535:
             raise ValueError(f'ServerSocket 无效的端口号 "{bind[1]}"')
         if not callable(on_recv):
             raise ValueError(f'ServerSocket on_recv 参数必须为可调用对象')
 
-        self.logger = Logger()
-        self.protocol = protocol
-        self.bind = bind
-        self.group = group
-        self.on_recv = on_recv
+        self.logger     = Logger()
+        self.protocol   = protocol
+        self.bind       = bind
+        self.group      = group
+        self.on_recv    = on_recv
+        self.bufsize    = bufsize
+        self.timeout    = timeout
         self.sock: socket.socket | None = None
         self.tcp_sub_socks: list[socket.socket] = []
         self.thread: Thread | Process | None = None
@@ -96,14 +96,21 @@ class ServerSocket():
                     self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                     self.sock.bind(self.bind)
                 case 'MULTICAST':
+                    self_addr = (
+                        socket.INADDR_ANY.to_bytes(4)
+                        if self.bind[0] == '0.0.0.0' or self.bind[0] == '' else
+                        socket.inet_aton(self.bind[0])
+                    )
+
                     self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                     self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                     self.sock.bind(self.bind)
                     self.sock.setsockopt(
                         socket.IPPROTO_IP,
                         socket.IP_ADD_MEMBERSHIP,
-                        socket.inet_aton(self.group) + socket.inet_aton(self.bind[0]),
+                        socket.inet_aton(self.group) + self_addr,
                     )
+            self.sock.settimeout(self.timeout)
             self.bind = self.sock.getsockname()
             self.__socked = True
         except Exception as e:
@@ -124,7 +131,7 @@ class ServerSocket():
     def __tcp_sub_thread(self, client_sock: socket.socket, client_addr: tuple[str, int]) -> None:
         while self.is_active():
             try:
-                if not (data := client_sock.recv(1024)):
+                if not (data := client_sock.recv(self.bufsize)):
                     self.logger.debug(f'{self} TCP 子线程 {client_addr} 正常断开')
                     break
 
@@ -158,7 +165,7 @@ class ServerSocket():
                     self.tcp_sub_socks.append(client_sock)
                     Thread(target=self.__tcp_sub_thread, args=(client_sock, client_addr), daemon=True).start()
                 else:
-                    data, client_addr = self.sock.recvfrom(1024)
+                    data, client_addr = self.sock.recvfrom(self.bufsize)
 
                     self.logger.debug(f'{self} 收到 {client_addr} 的数据: {data}')
                     try:

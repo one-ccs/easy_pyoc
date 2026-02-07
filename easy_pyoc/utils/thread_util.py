@@ -1,79 +1,201 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-from typing import Any, Iterable, Mapping, Callable, Optional
-from threading import Thread, Event, current_thread, active_count
+"""线程工具"""
+
+from typing import Optional
+from threading import Thread, Event, Semaphore, Condition, Lock, current_thread, active_count, enumerate, get_ident
+from traceback import extract_stack
+from concurrent.futures import Executor, Future
+from queue import PriorityQueue
+import os
 
 
-class ThreadUtil:
+class StackThread(Thread):
+    """跨线程记录调用栈
 
-    tasks: dict[int, tuple[Thread, Event]] = {}
-    """任务字典, key 为任务 id, value 为 (任务对象, 停止事件) """
+    使用该类可以在多线程环境下记录和获取线程的调用栈信息。
+    """
 
-    @staticmethod
-    def get_current_name():
-        return current_thread().name
+    ignore_functions = (
+        '_bootstrap', '_bootstrap_inner', 'run', 'get_brief_stack', 'get_fn', 'push_summary'
+    )
+    """调用栈中忽略的函数名"""
 
-    @staticmethod
-    def get_current_id():
-        return current_thread().ident
+    ignore_prefix = ('__', )
+    """调用栈中忽略的函数名前缀"""
 
-    @staticmethod
-    def get_count():
-        return active_count()
+    _stack_tree = {}
+    """调用树"""
 
-    @staticmethod
-    def get_list():
-        return enumerate()
+    _summary    = {}
+    """调用栈"""
 
-    @staticmethod
-    def execute_task(
-        target: Callable[[Event], None],
-        args: Iterable[Any] = (),
-        kwargs: Optional[Mapping[str, Any]] = None,
-        daemon: bool = True,
-    ) -> Optional[int]:
-        """执行一个任务, 该任务应该通过 stop_flag.is_set() 来判断是否需要停止.
+    def __init__(self, group=None, target=None, name=None, args=(), kwargs=None, *, daemon=None):
+        super().__init__(group, target, name, args, kwargs, daemon=daemon)
+        StackThread.push_summary()
 
-        Args:
-            target (Callable[[Event], None]): 运行的函数, 第一个位置参数固定为 stop_flag.
-            args (Iterable[Any], optional): 位置参数. 默认为 ().
-            kwargs (Optional[Mapping[str, Any]], optional): 关键字参数. 默认为 None.
-            daemon (bool, optional): 是否是守护线程. 默认为 True.
+    def start(self):
+        super().start()
+        StackThread._stack_tree[self.ident] = get_ident()
 
-        Returns:
-            Optional[int]: 任务 id
+    def set_parent(self, ident: int):
+        """设置父线程标识符
+
+        用于记录线程之间的调用关系，比如在消费者线程中手动设置父线程标识符。
         """
-        # 清除未活动的任务
-        need_clear = [task_id for task_id, (task, _) in ThreadUtil.tasks.items() if not task.is_alive()]
-        for task_id in need_clear:
-            ThreadUtil.tasks.pop(task_id, None)
-
-        stop_flag = Event()
-        stop_flag.set()
-
-        task = Thread(target=target, args=(stop_flag, *args), kwargs=kwargs, daemon=daemon)
-        task.start()
-
-        task_id = task.ident
-        ThreadUtil.tasks[task_id] = (task, stop_flag)
-
-        return task_id
+        StackThread._stack_tree[self.ident] = ident
 
     @staticmethod
-    def chancel_task(task_id: int):
-        """取消一个任务, 并调用 stop_flag.clear()
+    def get_fn():
+        """获取当前线程调用栈"""
+        return [
+            f.name for f in extract_stack()
+            if f.name not in StackThread.ignore_functions and not any(f.name.startswith(p) for p in StackThread.ignore_prefix)
+        ]
 
+    @staticmethod
+    def push_summary():
+        """记录当前线程调用栈
+
+        用于在线程切换时手动记录调用栈，比如在生产者线程中手动记录调用栈。
+        """
+        StackThread._summary[get_ident()] = StackThread.get_fn()
+
+    @staticmethod
+    def get_brief_stack():
+        """获取当前线程完整调用栈"""
+        stack = StackThread.get_fn()
+        _ftt = get_ident()
+        while _ftt := StackThread._stack_tree.get(_ftt, None):
+            if _ftt in StackThread._summary:
+                stack = StackThread._summary[_ftt] + stack
+        return stack
+
+
+class StackTimer(StackThread):
+
+    def __init__(self, interval, function, args=None, kwargs=None):
+        StackThread.__init__(self)
+        self.interval = interval
+        self.function = function
+        self.args = args if args is not None else []
+        self.kwargs = kwargs if kwargs is not None else {}
+        self.finished = Event()
+
+    def cancel(self):
+        self.finished.set()
+
+    def run(self):
+        self.finished.wait(self.interval)
+        if not self.finished.is_set():
+            self.function(*self.args, **self.kwargs)
+        self.finished.set()
+
+
+class PriorityThreadPoolExecutor(Executor):
+    """一个基于线程池的执行器，支持任务优先级调度"""
+
+    def __init__(self, max_workers: Optional[int] = None):
+        """
         Args:
-            task_id (int): 任务 id
+            max_workers (Optional[int], optional): 最大线程数. 默认为 None (自动根据处理器设置).
 
         Raises:
-            ValueError: 任务不存在或已结束
+            ValueError: 当 'max_workers' 小于等于 0 时抛出异常.
         """
-        (task, stop_flag) = ThreadUtil.tasks.get(task_id, (None, None))
+        max_workers = max_workers or os.cpu_count() or 1
 
-        if not task:
-            raise ValueError(f'任务 "{task_id}" 不存在')
+        if max_workers <= 0:
+            raise ValueError("'max_workers' 必须大于 0")
 
-        stop_flag.clear()
-        task.join()
-        ThreadUtil.tasks.pop(task_id, None)
+        self._max_workers = max_workers
+        self._queue = PriorityQueue()
+        self._idle_semaphore = Semaphore(0)
+        self._threads = set()
+        self._shutdown = False
+        self._shutdown_lock = Lock()
+        self._condition = Condition(Lock())
+
+        for _ in range(self._max_workers):
+            t = Thread(target=self._worker)
+            t.daemon = True
+            t.start()
+            self._threads.append(t)
+
+    def submit(self, fn, *args, **kwargs):
+        """提交一个任务到线程池
+
+        Args:
+            fn (function): 要提交到线程池执行的函数
+            *args: 传递给函数的位置参数
+            **kwargs: 传递给函数的关键字参数
+
+        Raises:
+            RuntimeError: 当线程池已关闭时抛出异常
+
+        Returns:
+            _type_: concurrent.futures.Future 对象，表示异步执行的任务结果
+        """
+        with self._condition:
+            if self._shutdown:
+                raise RuntimeError('无法提交新任务，线程池已关闭。')
+
+            f = Future()
+            w = (self._queue.qsize(), fn, args, kwargs, f)
+            self._queue.put(w)
+            self._condition.notify()
+
+        return f
+
+    def _worker(self):
+        while True:
+            with self._condition:
+                if self._shutdown and self._queue.empty():
+                    return
+                elif not self._queue.empty():
+                    work = self._queue.get()
+                else:
+                    self._condition.wait()
+
+            if work is not None:
+                func, args, kwargs, future = work[1], work[2], work[3], work[4]
+                try:
+                    result = func(*args, **kwargs)
+                    future.set_result(result)
+                except Exception as e:
+                    future.set_exception(e)
+                finally:
+                    self._queue.task_done()
+
+    def shutdown(self, wait: bool = True):
+        """关闭线程池
+        Args:
+            wait (bool, optional): 是否等待所有线程完成. 默认为 True.
+        """
+        with self._shutdown_lock:
+            self._shutdown = True
+
+        with self._condition:
+            self._condition.notify_all()
+
+        if wait:
+            for t in self._threads:
+                t.join()
+
+
+def get_current_name():
+    """获取当前线程的名称"""
+    return current_thread().name
+
+
+def get_current_id():
+    """获取当前线程的 id"""
+    return current_thread().ident
+
+
+def get_count():
+    """获取活动线程的数量"""
+    return active_count()
+
+
+def get_list():
+    """获取活动线程的列表"""
+    return enumerate()

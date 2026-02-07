@@ -1,8 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 import pytest
 
-from easy_pyoc import XMLUtil
+from easy_pyoc import xml_util
 
 
 X1 = '''
@@ -299,30 +297,30 @@ D6 = {
 
 def test_xml_to_dict():
     with pytest.raises(ValueError, match='格式有误'):
-        XMLUtil.xml_to_dict(X1)
-    assert XMLUtil.xml_to_dict(X2) == D2
-    assert XMLUtil.xml_to_dict(X21) == D21
-    assert XMLUtil.xml_to_dict(X22) == D22
-    assert XMLUtil.xml_to_dict(X23) == D23
-    assert XMLUtil.xml_to_dict(X3) == D3
-    assert XMLUtil.xml_to_dict(X31) == D31
-    assert XMLUtil.xml_to_dict(X32) == D32
-    assert XMLUtil.xml_to_dict(X5) == D5
-    assert XMLUtil.xml_to_dict(X6) == D6
+        xml_util.xml_to_dict(X1)
+    assert xml_util.xml_to_dict(X2) == D2
+    assert xml_util.xml_to_dict(X21) == D21
+    assert xml_util.xml_to_dict(X22) == D22
+    assert xml_util.xml_to_dict(X23) == D23
+    assert xml_util.xml_to_dict(X3) == D3
+    assert xml_util.xml_to_dict(X31) == D31
+    assert xml_util.xml_to_dict(X32) == D32
+    assert xml_util.xml_to_dict(X5) == D5
+    assert xml_util.xml_to_dict(X6) == D6
 
 
 def test_dict_to_xml():
     import re
-    assert re.sub(r'\s', '', XMLUtil.dict_to_xml(D1)) == re.sub(r'\s', '', X1)
-    assert re.sub(r'\s', '', XMLUtil.dict_to_xml(D2)) == re.sub(r'\s', '', X2)
-    assert re.sub(r'\s', '', XMLUtil.dict_to_xml(D21)) == re.sub(r'\s', '', X21)
-    assert re.sub(r'\s', '', XMLUtil.dict_to_xml(D22)) == re.sub(r'\s', '', X221)
-    assert re.sub(r'\s', '', XMLUtil.dict_to_xml(D23)) == re.sub(r'\s', '', X231)
-    assert re.sub(r'\s', '', XMLUtil.dict_to_xml(D3)) == re.sub(r'\s', '', X3)
-    assert re.sub(r'\s', '', XMLUtil.dict_to_xml(D31)) == re.sub(r'\s', '', X31)
-    assert re.sub(r'\s', '', XMLUtil.dict_to_xml(D32)) == re.sub(r'\s', '', X321)
-    assert re.sub(r'\s', '', XMLUtil.dict_to_xml(D5)) == re.sub(r'\s', '', X51)
-    assert re.sub(r'\s', '', XMLUtil.dict_to_xml(D6)) == re.sub(r'\s', '', X61)
+    assert re.sub(r'\s', '', xml_util.dict_to_xml(D1)) == re.sub(r'\s', '', X1)
+    assert re.sub(r'\s', '', xml_util.dict_to_xml(D2)) == re.sub(r'\s', '', X2)
+    assert re.sub(r'\s', '', xml_util.dict_to_xml(D21)) == re.sub(r'\s', '', X21)
+    assert re.sub(r'\s', '', xml_util.dict_to_xml(D22)) == re.sub(r'\s', '', X221)
+    assert re.sub(r'\s', '', xml_util.dict_to_xml(D23)) == re.sub(r'\s', '', X231)
+    assert re.sub(r'\s', '', xml_util.dict_to_xml(D3)) == re.sub(r'\s', '', X3)
+    assert re.sub(r'\s', '', xml_util.dict_to_xml(D31)) == re.sub(r'\s', '', X31)
+    assert re.sub(r'\s', '', xml_util.dict_to_xml(D32)) == re.sub(r'\s', '', X321)
+    assert re.sub(r'\s', '', xml_util.dict_to_xml(D5)) == re.sub(r'\s', '', X51)
+    assert re.sub(r'\s', '', xml_util.dict_to_xml(D6)) == re.sub(r'\s', '', X61)
 
 
 if __name__ == '__main__':

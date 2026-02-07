@@ -1,10 +1,7 @@
-.vscode/
-.pytest_cache/
 __pycache__/
-build/
 dist/
-realse/
+release/
 *.egg-info/
 
-*.log*
-*.local
+.python-version
+uv.lock

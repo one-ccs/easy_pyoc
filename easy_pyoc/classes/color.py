@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 class AnsiColor:
     """控制台 ASCII 颜色类"""

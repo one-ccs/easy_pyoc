@@ -1,46 +1,44 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 from .classes.logger import Logger as Logger
 from .classes.magic import Magic as Magic
 from .classes.config import Config as Config
 from .classes.color import AnsiColor as AnsiColor
 
-from .sock.server_socket import ServerSocket as ServerSocket
-from .sock.client_socket import ClientSocket as ClientSocket
+from .sock.server import ServerSocket as ServerSocket
+from .sock.client import ClientSocket as ClientSocket
 
+from .utils import data_util as data_util
+from .utils import datetime_util as datetime_util
+from .utils import exception_util as exception_util
+from .utils import func_util as func_util
+from .utils import json_util as json_util
+from .utils import knx_util as knx_util
+from .utils import network_util as network_util
+from .utils import object_util as object_util
+from .utils import package_util as package_util
+from .utils import path_util as path_util
+from .utils import string_util as string_util
+from .utils import thread_util as thread_util
+from .utils import xml_util as xml_util
 from .utils import not_this_module
-from .utils.crc_util import CRCUtil as CRCUtil
-from .utils.datetime_util import DateTimeUtil as DateTimeUtil
-from .utils.json_util import JSONUtil as JSONUtil
-from .utils.knx_util import KNXUtil as KNXUtil
-from .utils.network_util import NetworkUtil as NetworkUtil
-from .utils.object_util import ObjectUtil as ObjectUtil
-from .utils.path_util import PathUtil as PathUtil
-from .utils.string_util import StringUtil as StringUtil
-from .utils.xml_util import XMLUtil as XMLUtil
-from .utils.thread_util import ThreadUtil as ThreadUtil
-from .utils.func_util import FuncUtil as FuncUtil
-from .utils.package_util import PackageUtil as PackageUtil
-from .utils.exception_util import ExceptionUtil as ExceptionUtil
-from .utils.cr4_util import CR4Util as CR4Util
 
 try:
-    from .utils.flask_util import FlaskUtil as FlaskUtil
+    from .utils import toml_util as toml_util
 except ImportError as e:
-    FlaskUtil = not_this_module('FlaskUtil', e.msg)
+    toml_util = not_this_module('toml_util', e.msg)
 
 try:
-    from .utils.toml_util import TOMLUtil as TOMLUtil
+    from .utils import yaml_util as yaml_util
 except ImportError as e:
-    TOMLUtil = not_this_module('TOMLUtil', e.msg)
+    yaml_util = not_this_module('yaml_util', e.msg)
 
 try:
-    from .utils.yaml_util import YAMLUtil as YAMLUtil
+    from .utils import flask_util as flask_util
 except ImportError as e:
-    YAMLUtil = not_this_module('YAMLUtil', e.msg)
+    flask_util = not_this_module('flask_util', e.msg)
 
 
-__version__ = PackageUtil.get_version('easy_pyoc')
+
+__version__ = package_util.get_version('easy_pyoc')
 __author__ = 'one-ccs'
 __email__ = 'one-ccs@foxmail.com'
 
@@ -53,21 +51,20 @@ __all__ = [
     'ServerSocket',
     'ClientSocket',
 
-    'CRCUtil',
-    'DateTimeUtil',
-    'FlaskUtil',
-    'JSONUtil',
-    'KNXUtil',
-    'NetworkUtil',
-    'ObjectUtil',
-    'PathUtil',
-    'StringUtil',
-    'TOMLUtil',
-    'XMLUtil',
-    'YAMLUtil',
-    'ThreadUtil',
-    'FuncUtil',
-    'PackageUtil',
-    'ExceptionUtil',
-    'CR4Util',
+    'data_util',
+    'datetime_util',
+    'exception_util',
+    'func_util',
+    'json_util',
+    'knx_util',
+    'network_util',
+    'object_util',
+    'package_util',
+    'path_util',
+    'string_util',
+    'thread_util',
+    'xml_util',
+    'toml_util',
+    'yaml_util',
+    'flask_util',
 ]

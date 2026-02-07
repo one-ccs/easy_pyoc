@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 from typing import TYPE_CHECKING, TypeVar, Optional, Literal, Callable, Union, Any
 from typing_extensions import Self
 from pathlib import Path
@@ -8,7 +6,7 @@ from copy import deepcopy
 if TYPE_CHECKING:
     from _typeshed import FileDescriptorOrPath
 
-from ..utils.path_util import PathUtil
+from ..utils import path_util
 from .magic import Magic
 
 
@@ -56,7 +54,7 @@ class Config(Magic):
         self.__file_path      = None
 
         if config is not None and decoder is not None:
-            self.__file_path = PathUtil.abspath(config)
+            self.__file_path = path_util.abspath(config)
             if not isinstance((_config := self.__load(config, decoder)), dict):
                 raise ValueError(f'配置文件 "{self.__file_path}" 无法解析为字典.')
             self.__init_with_dict(_config, default_map)
@@ -173,17 +171,17 @@ class Config(Magic):
     ) -> Any:
         match decoder:
             case 'yaml':
-                from ..utils.yaml_util import YAMLUtil
+                from ..utils import yaml_util
 
-                return YAMLUtil.load(fp)
+                return yaml_util.load(fp)
             case 'toml':
-                from ..utils.toml_util import TOMLUtil
+                from ..utils import toml_util
 
-                return TOMLUtil.load(fp)
+                return toml_util.load(fp)
             case 'json':
-                from ..utils.json_util import JSONUtil
+                from ..utils import json_util
 
-                return JSONUtil.load(fp)
+                return json_util.load(fp)
 
     def __init_with_other(self, config: Any):
         if self.__hook:

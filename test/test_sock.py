@@ -1,7 +1,5 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-from easy_pyoc import NetworkUtil
+from easy_pyoc import network_util
 
 
 def test_send_WOL():
-    NetworkUtil.send_WOL('001122334455')
+    network_util.send_WOL('001122334455')

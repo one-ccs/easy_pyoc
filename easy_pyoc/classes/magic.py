@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-from ..utils.object_util import ObjectUtil
+from ..utils import object_util
 
 
 class Magic(object):
@@ -13,10 +11,19 @@ class Magic(object):
     _call_include = {}
 
     def __str__(self) -> str:
-        return ObjectUtil.repr(self, self._str_exclude, self._str_include)
+        return object_util.repr(self, self._str_exclude, self._str_include)
 
     def __repr__(self) -> str:
-        return ObjectUtil.repr(self, self._repr_exclude, self._repr_include)
+        return object_util.repr(self, self._repr_exclude, self._repr_include)
 
-    def __call__(self) -> dict:
-        return ObjectUtil.vars(self, self._call_exclude, self._call_include)
+    def __call__(self, *, include: set[str] | None = None, exclude: set[str] | None = None) -> dict:
+        """返回对象属性字典
+
+        Args:
+            include (set[str] | None, optional): 要包含的属性名集合. 默认为 None (使用 _call_include).
+            exclude (set[str] | None, optional): 要排除的属性名集合. 默认为 None (使用 _call_exclude).
+
+        Returns:
+            dict: 对象属性字典
+        """
+        return object_util.vars(self, include or self._call_exclude, exclude or self._call_include)

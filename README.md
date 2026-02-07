@@ -29,20 +29,20 @@ pip install easy_pyoc
 
 封装了一些工具函数。
 
-- `CRCUtil` CRC 校验工具，提供 CRC16 校验功能
-- `DatetimeUtil` 日期相关工具
-- *`FlaskUtil` Flask 相关工具
-- `FuncUtil` 函数相关工具, 提供函数调用日志装饰器、异常捕获装饰器、执行钩子装饰器等
-- `JSONUtil` json 相关工具
-- `KNXUtil` KNXnet/IP 相关工具
-- `NetworkUtil` 提供网络唤醒、网络信息获取等功能
-- `ObjectUtil` 对象相关工具，提供字典与对象相互转换等函数
-- `PathUtil` 路径相关工具
-- `StringUtil` 字符串相关工具，提供进制转换、字符串命名格式化等功能
-- `ThreadUtil` 线程相关工具，提供任务执行/取消等功能
-- `TOMLUtil` TOML 相关工具，仅提供 TOML 格式解析功能
-- `XMLUtil` xml 相关工具，提供 xml 文件读写功能
-- `YAMLUtil` yaml 相关工具，提供 yaml 文件读写功能
+- `crc_util` CRC 校验工具，提供 CRC16 校验功能
+- `datetime_util` 日期相关工具
+- *`flask_util` Flask 相关工具
+- `func_util` 函数相关工具, 提供函数调用日志装饰器、异常捕获装饰器、执行钩子装饰器等
+- `json_util` json 相关工具
+- `knx_util` KNXnet/IP 相关工具
+- `network_util` 提供网络唤醒、网络信息获取等功能
+- `object_util` 对象相关工具，提供字典与对象相互转换等函数
+- `path_util` 路径相关工具
+- `string_util` 字符串相关工具，提供进制转换、字符串命名格式化等功能
+- `thread_util` 线程相关工具，提供任务执行/取消等功能
+- `toml_util` toml 相关工具，仅提供 toml 格式解析功能
+- `xml_util` xml 相关工具，提供 xml 文件读写功能
+- `yaml_util` yaml 相关工具，提供 yaml 文件读写功能
 
 ### 4、OcGui
 

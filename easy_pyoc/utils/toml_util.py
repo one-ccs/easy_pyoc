@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+"""toml 工具, 仅提供 toml 解析功能."""
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -10,17 +10,13 @@ try:
 except ModuleNotFoundError:
     raise ModuleNotFoundError('无法导入 "tomllib" 模块, 该模块仅 Python 3.11+ 版本支持.')
 
-from .path_util import PathUtil
+from . import path_util
 
 
-class TOMLUtil(object):
-    """TOML 工具类, 仅提供 TOML 解析功能."""
+def loads(text: str):
+    return tomllib.loads(text)
 
-    @staticmethod
-    def loads(text: str):
-        return tomllib.loads(text)
 
-    @staticmethod
-    def load(fp: 'FileDescriptorOrPath', encoding: str = 'utf-8'):
-        with PathUtil.open(fp, 'r', encoding=encoding) as f:
-            return tomllib.load(f)
+def load(fp: 'FileDescriptorOrPath', encoding: str = 'utf-8'):
+    with path_util.open(fp, 'r', encoding=encoding) as f:
+        return tomllib.load(f)
