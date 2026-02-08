@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "easy-pyoc"
-version = "0.12.0"
+version = "0.12.1"
 description = "封装一些 Python 小工具，提升开发效率。"
 authors = [
     { name = "one-ccs", email = "one-ccs@foxmail.com" }
