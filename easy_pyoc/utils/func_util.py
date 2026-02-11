@@ -1,14 +1,18 @@
 """函数工具"""
 
-from typing import Callable, ParamSpecArgs, ParamSpecKwargs, Any
+from typing import Callable, ParamSpecArgs, ParamSpecKwargs, Any, Literal, TypeAlias, overload
+from types import new_class
 from traceback import format_exc
 from functools import wraps
 from inspect import signature
-from threading import Timer
+from threading import Timer, Lock
 from time import time
 
+Logger: TypeAlias = Callable[[str], Any]
+CatchLogger: TypeAlias = Callable[[str, str], Any]
 
-def log(logger: Callable = print):
+
+def log(logger: Logger = print):
     """装饰器，打印函数调用信息
 
     Args:
@@ -27,7 +31,7 @@ def log(logger: Callable = print):
     return decorator
 
 
-def catch(logger: Callable = print, *, is_raise: bool = False, on_except: Callable[[Exception], None] | None = None):
+def catch(logger: CatchLogger = print, *, is_raise: bool = False, on_except: Callable[[Exception], None] | None = None):
     """装饰器，捕获函数异常并输出日志
 
     Args:
@@ -72,7 +76,34 @@ def catch(logger: Callable = print, *, is_raise: bool = False, on_except: Callab
     return decorator
 
 
-def hook(hook: Callable[[str, ParamSpecArgs, ParamSpecKwargs], bool | Any]):
+@overload
+def class_catch[T](cls: Literal[None] = None, logger: CatchLogger = print, *, is_raise: bool = False, on_except: Callable[[Exception], None] | None = None) -> Callable[[T], T]: ...
+@overload
+def class_catch[T](cls: T, logger: CatchLogger = print, *, is_raise: bool = False, on_except: Callable[[Exception], None] | None = None) -> T: ...
+
+def class_catch[T](cls: T | None = None, logger: CatchLogger = print, *, is_raise: bool = False, on_except: Callable[[Exception], None] | None = None) -> T | Callable[[T], T]:
+    """装饰器，捕获类方法执行异常，并输出日志
+
+    Args:
+        logger (Callable, optional): 日志输出函数. 默认为 `print`.
+        is_raise (bool, optional): 是否抛出异常. 默认为 False.
+        on_except (Callable[[Exception], None] | None, optional): 异常回调函数. 默认为 None.
+    """
+    def wrapper(cls: T) -> T:
+        for attr in filter(lambda x: not x.startswith('__'), dir(cls)):
+            obj = getattr(cls, attr)
+
+            if callable(obj):
+                setattr(cls, attr, catch(logger, is_raise=is_raise, on_except=on_except)(obj))
+        return cls
+
+    if cls is None:
+        return wrapper
+
+    return wrapper(cls)
+
+
+def hook(hook: Callable[[str, Any, ParamSpecArgs, ParamSpecKwargs], bool | Any]):
     """装饰器，在函数调用前后执行 hook 函数
 
     Args:
@@ -219,3 +250,55 @@ def call[T](target: Callable[..., T], *args, **kwargs) -> T:
     _args = args[:_args]
 
     return target(*_args, **_kwargs)
+
+
+@overload
+def singleton[T](cls: Literal[None] = None) -> Callable[[type[T]], type[T]]: ...
+@overload
+def singleton[T](cls: type[T]) -> type[T]: ...
+
+def singleton[T](cls: type[T] | None = None) -> type[T] | Callable[[type[T]], type[T]]:
+    """单例装饰器
+
+    Args:
+        cls (T, optional): 类. 默认为 None.
+
+    Returns:
+        T: 单例类
+
+    Examples:
+
+        >>> @singleton
+        ... class MyClass:
+        ...     pass
+        >>>
+        >>> obj1 = MyClass()
+        >>> obj2 = MyClass()
+        >>> assert obj1 is obj2
+    """
+    lock = Lock()
+
+    class SingletonMeta(type):
+        _instances = {}
+
+        def __call__(cls, *args, **kwargs):
+            if cls not in cls._instances:
+                with lock:
+                    if cls not in cls._instances:
+                        cls._instances[cls] = super(SingletonMeta, cls).__call__(*args, **kwargs)
+            return cls._instances[cls]
+
+    def wrapper(cls):
+        return new_class(
+            name=cls.__name__,
+            bases=(cls, ),
+            kwds={
+                'metaclass': SingletonMeta,
+            },
+            exec_body=lambda ns: ns.update(cls.__dict__),
+        )
+
+    if cls is None:
+        return wrapper
+
+    return wrapper(cls)

@@ -7,6 +7,7 @@ from ..classes.logger import Logger
 
 
 class ClientSocket():
+
     def __init__(
             self,
             *,

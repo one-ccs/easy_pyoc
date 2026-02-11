@@ -5,6 +5,32 @@ from time import sleep
 from easy_pyoc import func_util
 
 
+def test_class_catch_decorator():
+    """测试类方法异常捕获装饰器"""
+    @func_util.class_catch
+    class TestClassA:
+        def method_no_error(self):
+            return 'success'
+
+    obj = TestClassA()
+    assert obj.method_no_error() == 'success'
+
+    t = None
+    def f(msg, tb):
+        nonlocal t
+        t = msg
+
+    @func_util.class_catch(logger=f, is_raise=True)
+    class TestClassB:
+        def method_no_error(self):
+            raise ValueError('test error')
+
+    obj = TestClassB()
+    with pytest.raises(ValueError, match='test error'):
+        obj.method_no_error()
+        assert t.startswith('函数 method_no_error, 发生异常: ValueError: test error')
+
+
 def test_has_args():
     def test_func(a, b, c=10):
         pass
@@ -13,6 +39,7 @@ def test_has_args():
     assert func_util.has_arg(test_func, 'b')
     assert not func_util.has_arg(test_func, 'c')
     assert not func_util.has_arg(test_func, 'd')
+
 
 def test_has_kwarg():
     def test_func(a, b, c=10):
@@ -239,3 +266,19 @@ def test_throttle_with_kwargs():
     throttled_func(a=1, b=2, c=3)
     sleep(0.2)
     mock_func.assert_called_once_with(a=1, b=2, c=3)
+
+
+def test_singleton_decorator():
+    @func_util.singleton
+    class TestClass:
+        def __init__(self, a, b):
+            self.a = a
+            self.b = b
+
+    obj1 = TestClass(1, 2)
+    obj2 = TestClass(3, 4)
+    assert obj1 is obj2
+    assert obj1.a == 1
+    assert obj1.b == 2
+    assert obj2.a == 1
+    assert obj2.b == 2

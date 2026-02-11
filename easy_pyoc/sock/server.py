@@ -8,6 +8,7 @@ from ..classes.logger import Logger
 
 
 class ServerSocket():
+
     def __init__(
             self,
             *,
@@ -46,7 +47,19 @@ class ServerSocket():
             ValueError: 组播协议必须指定组播地址
             ValueError: 协议类型为非 "MULTICAST" 时请勿设置 group 参数
             ValueError: 无效的端口号, 应为 [1-65535]
+
         Examples:
+
+            >>> def on_recv(data: bytes, client_addr: tuple[str, int], send_back: Callable[[bytes], int]) -> None:
+            ...     print(f'收到来自 {client_addr} 的数据: {data}')
+            ...     send_back(b'Hello, world!')
+            >>>
+            >>> server = ServerSocket(protocol='TCP', bind=('0.0.0.0', 8080), on_recv=on_recv)
+            >>> server.start()
+            >>> server.join()
+            收到来自 ('127.0.0.1', 50142) 的数据: b'Hello, world!'
+            收到来自 ('127.0.0.1', 50143) 的数据: b'Hello, world!'
+            收到来自 ('127.0.0.1', 50145) 的数据: b'Hello, world!'
         """
         self.__active = False
         self.__socked = False

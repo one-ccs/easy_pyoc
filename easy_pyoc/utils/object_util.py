@@ -1,42 +1,19 @@
 """对象工具"""
 
-from typing import Literal, Callable
+from typing import Literal, Container
 from functools import reduce
 from operator import getitem
 
 from . import string_util
-from . import func_util
 
 
-def pub_class_catch[T](cls: T | None = None, logger: Callable = print, *, is_raise: bool = False, on_except: Callable[[Exception], None] | None = None) -> T:
-    """装饰器，捕获类方法执行异常，并输出日志
-
-    Args:
-        logger (Callable, optional): 日志输出函数. 默认为 `print`.
-        is_raise (bool, optional): 是否抛出异常. 默认为 False.
-        on_except (Callable[[Exception], None] | None, optional): 异常回调函数. 默认为 None.
-    """
-    def wrap(cls):
-        for attr in filter(lambda x: not x.startswith('__'), dir(cls)):
-            obj = getattr(cls, attr)
-
-            if callable(obj):
-                setattr(cls, attr, func_util.catch(logger, is_raise=is_raise, on_except=on_except)(obj))
-        return cls
-
-    if cls is None:
-        return wrap
-
-    return wrap(cls)
-
-
-def repr(obj: object, exclude: set[str] = {}, include: set[str] = {}) -> str:
+def repr(obj: object, exclude: Container[str] = {}, include: Container[str] = {}) -> str:
     """将对象转为描述属性的字符串
 
     Args:
         obj (object): _description_
-        exclude (set[str], optional): 忽略属性列表. 默认为 {}.
-        include (set[str], optional): 包含属性列表. 默认为 {}.
+        exclude (Container[str], optional): 忽略属性列表. 默认为 {}.
+        include (Container[str], optional): 包含属性列表. 默认为 {}.
 
     Returns:
         str: 对象详情字符串
@@ -53,13 +30,13 @@ def repr(obj: object, exclude: set[str] = {}, include: set[str] = {}) -> str:
     return f'{class_name}({attributes_str})'
 
 
-def vars(obj: object, exclude: set[str] = {}, include: set[str] = {}, style='snake') -> dict:
+def vars(obj: object, exclude: Container[str] = {}, include: Container[str] = {}, style='snake') -> dict:
     """将对象的属性转为字典形式
 
     Args:
         obj (object): 对象实例
-        exclude (set[str], optional): 忽略属性列表. 默认为 {}.
-        include (set[str], optional): 包含属性列表. 默认为 {}.
+        exclude (Container[str], optional): 忽略属性列表. 默认为 {}.
+        include (Container[str], optional): 包含属性列表. 默认为 {}.
         style (str, optional): 键名命名风格，为 None 不转换. 默认为 'snake'.
 
     Returns:
@@ -96,7 +73,7 @@ def vars(obj: object, exclude: set[str] = {}, include: set[str] = {}, style='sna
     }
 
 
-def update_with_dict[T](obj: T, *, exclude: set[str] = {}, style: Literal['snake', 'camel'] = 'snake', **kw) -> T:
+def update_with_dict[T](obj: T, *, exclude: Container[str] = {}, style: Literal['snake', 'camel'] = 'snake', **kw) -> T:
     """用关键字参数将对象赋值, 并忽略对象上不存在的属性
 
     Args:
@@ -108,8 +85,6 @@ def update_with_dict[T](obj: T, *, exclude: set[str] = {}, style: Literal['snake
     Returns:
         T: 更新数据后的对象实例
     """
-    style = kw.get('style', 'snake')
-    exclude = kw.get('exclude', [])
     for k, v in kw.items():
         if style == 'snake':
             k = string_util.camel_to_snake(k)

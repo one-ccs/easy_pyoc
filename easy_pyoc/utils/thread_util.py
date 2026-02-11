@@ -1,26 +1,19 @@
 """线程工具"""
 
-from typing import Optional, Callable, Any, Tuple
-from threading import Thread, Event, Semaphore, Condition, Lock, current_thread, active_count, enumerate, get_ident
+from typing import Callable, Any, TypeAlias, ParamSpecArgs, ParamSpecKwargs
+from threading import Thread, Event, Semaphore, Lock, current_thread, active_count, enumerate, get_ident
 from traceback import extract_stack
 from concurrent.futures import Executor, Future
 from concurrent.futures._base import LOGGER
 from queue import PriorityQueue, Empty
 import os
-import logging
 import itertools
-import types
-import weakref
+from concurrent.futures import ThreadPoolExecutor
+
+from . import func_util
 
 
-# 关闭信号哨兵对象
-class _ShutdownSentinel:
-    """线程池关闭信号的哨兵对象"""
-    def __lt__(self, other):
-        return False
-
-
-_SHUTDOWN_SENTINEL = _ShutdownSentinel()
+Task: TypeAlias = Callable[..., Any]
 
 
 class StackThread(Thread):
@@ -105,15 +98,23 @@ class StackTimer(StackThread):
         self.finished.set()
 
 
+@func_util.singleton
+class _ShutdownSentinel:
+    """线程池关闭信号的哨兵对象"""
+
+    def __lt__(self, other):
+        return False
+
+
 class _PriorityWorkItem:
     """包装优先级任务的工作项"""
 
-    __slots__ = ('priority', 'future', 'fn', 'args', 'kwargs')
+    __slots__ = ('priority', 'future', 'task', 'args', 'kwargs')
 
-    def __init__(self, priority: int, future: Future, fn: Callable, args: Tuple, kwargs: dict):
+    def __init__(self, priority: int, future: Future, task: Task, args: tuple, kwargs: dict):
         self.priority = priority
         self.future = future
-        self.fn = fn
+        self.task = task
         self.args = args
         self.kwargs = kwargs
 
@@ -127,7 +128,7 @@ class _PriorityWorkItem:
             return
 
         try:
-            result = self.fn(*self.args, **self.kwargs)
+            result = self.task(*self.args, **self.kwargs)
         except BaseException as exc:
             self.future.set_exception(exc)
             # 打破异常和 self 的引用循环
@@ -137,72 +138,65 @@ class _PriorityWorkItem:
 
 
 class PriorityThreadPoolExecutor(Executor):
-    """基于优先级队列的线程池执行器
-
-    支持任务优先级调度、线程初始化、自定义线程名称等高级特性。
-    优先级值越小的任务越优先执行；优先级相同时按提交顺序执行。
-
-    Args:
-        max_workers: 最大工作线程数，默认为 CPU 核数 + 4（最多32个）
-        thread_name_prefix: 线程名称前缀，用于调试和日志记录
-        initializer: 可选的初始化函数，在每个工作线程启动时调用
-        initargs: 传递给初始化函数的参数元组
-
-    例子：
-        >>> # 基本用法
-        >>> executor = PriorityThreadPoolExecutor(max_workers=4)
-        >>> future = executor.submit(print, "normal task", priority=0)
-        >>> future = executor.submit(print, "high priority", priority=-1)
-        >>> executor.shutdown(wait=True)
-
-        >>> # 使用 with 语句
-        >>> with PriorityThreadPoolExecutor(max_workers=4) as executor:
-        ...     f1 = executor.submit(len, [1, 2, 3], priority=1)
-        ...     f2 = executor.submit(sum, [1, 2, 3], priority=-1)
-        ...     print(f1.result(), f2.result())
-
-        >>> # 使用初始化函数
-        >>> def init_worker(name):
-        ...     print(f"Worker {name} initialized")
-        >>> executor = PriorityThreadPoolExecutor(
-        ...     max_workers=2,
-        ...     thread_name_prefix='WorkerPool',
-        ...     initializer=init_worker,
-        ...     initargs=('thread-1',)
-        ... )
-    """
 
     # 用于生成唯一的执行器 ID
     _counter = itertools.count().__next__
 
     def __init__(
         self,
-        max_workers: Optional[int] = None,
+        max_workers: int | None = None,
         thread_name_prefix: str = '',
-        initializer: Optional[Callable] = None,
-        initargs: Tuple = ()
+        initializer: Callable[..., None] | None = None,
+        initargs: tuple = (),
     ):
-        """初始化优先级线程池执行器
+        """基于优先级队列的线程池执行器
+
+        支持任务优先级调度、线程初始化、自定义线程名称等高级特性。
+        优先级值越小的任务越优先执行；优先级相同时按提交顺序执行。
 
         Args:
-            max_workers: 最大工作线程数。如果为 None，则默认为 min(32, cpu_count() + 4)
-            thread_name_prefix: 线程名称前缀
-            initializer: 工作线程启动时调用的初始化函数
-            initargs: 传递给初始化函数的参数
+            max_workers (int, optional): 最大工作线程数，默认为 CPU 核数 + 4（最多32个）
+            thread_name_prefix (str, optional): 线程名称前缀，用于调试和日志记录
+            initializer (Callable[..., None], optional): 可选的初始化函数，在每个工作线程启动时调用
+            initargs (tuple, optional): 传递给初始化函数的参数元组
 
         Raises:
             ValueError: 当 max_workers <= 0 时抛出
             TypeError: 当 initializer 不可调用时抛出
+
+        Examples:
+
+            >>> # 基本用法
+            >>> executor = PriorityThreadPoolExecutor(max_workers=4)
+            >>> future = executor.submit(print, "normal task", priority=0)
+            >>> future = executor.submit(print, "high priority", priority=-1)
+            >>> executor.shutdown(wait=True)
+
+            >>> # 使用 with 语句
+            >>> with PriorityThreadPoolExecutor(max_workers=4) as executor:
+            ...     f1 = executor.submit(len, [1, 2, 3], priority=1)
+            ...     f2 = executor.submit(sum, [1, 2, 3], priority=-1)
+            ...     print(f1.result(), f2.result())
+
+            >>> # 使用初始化函数
+            >>> def init_worker(name):
+            ...     print(f"Worker {name} initialized")
+            >>> executor = PriorityThreadPoolExecutor(
+            ...     max_workers=2,
+            ...     thread_name_prefix='WorkerPool',
+            ...     initializer=init_worker,
+            ...     initargs=('thread-1',)
+            ... )
         """
         if max_workers is None:
             max_workers = min(32, (os.cpu_count() or 1) + 4)
         if max_workers <= 0:
-            raise ValueError("max_workers must be greater than 0")
+            raise ValueError('max_workers 必须大于 0')
         if initializer is not None and not callable(initializer):
-            raise TypeError("initializer must be a callable")
+            raise TypeError('initializer 必须是 callable 对象')
 
         self._max_workers = max_workers
-        self._queue = PriorityQueue()
+        self._queue = PriorityQueue[tuple[int, int, _PriorityWorkItem | _ShutdownSentinel] | _ShutdownSentinel]()
         self._idle_semaphore = Semaphore(0)
         self._threads = set()
         self._shutdown = False
@@ -215,6 +209,7 @@ class PriorityThreadPoolExecutor(Executor):
         self._initargs = initargs
         self._broken = False
         self._task_counter = 0  # 用于同优先级任务的 FIFO 排序
+        self._task_wrapper = None
 
         # 在初始化时创建所有工作线程
         for i in range(self._max_workers):
@@ -227,9 +222,26 @@ class PriorityThreadPoolExecutor(Executor):
             t.start()
             self._threads.add(t)
 
+    def task_wrapper(self, wrapper: Callable[[Task, ParamSpecArgs, ParamSpecKwargs], Any]):
+        """装饰器，设置任务包装函数
+
+        该函数在每个任务执行前调用，可以用于在线程中执行任务前做一些额外的处理。
+
+        Examples:
+
+            >>> @executor.task_wrapper
+            >>> def wrapper(task, args, kwargs):
+            ...     with app.app_context():
+            ...         return task(*args, **kwargs)
+        """
+        if not callable(wrapper):
+            raise TypeError("wrapper 必须是 callable 对象")
+
+        self._task_wrapper = wrapper
+
     def submit(
         self,
-        fn: Callable,
+        task: Task,
         *args,
         priority: int = 0,
         **kwargs
@@ -237,10 +249,10 @@ class PriorityThreadPoolExecutor(Executor):
         """提交任务到线程池
 
         Args:
-            fn: 要执行的可调用对象
-            *args: 传递给 fn 的位置参数
+            task: 要执行的可调用对象
+            *args: 传递给 task 的位置参数
             priority: 任务优先级，值越小越优先执行。默认为 0
-            **kwargs: 传递给 fn 的关键字参数
+            **kwargs: 传递给 task 的关键字参数
 
         Returns:
             Future: 表示异步执行的任务
@@ -258,10 +270,16 @@ class PriorityThreadPoolExecutor(Executor):
             if self._broken:
                 raise RuntimeError(self._broken)
             if self._shutdown:
-                raise RuntimeError('cannot schedule new futures after shutdown')
+                raise RuntimeError('线程池已关闭，无法提交任务')
+
+            def wrapped_task(*args, **kwargs):
+                if callable(self._task_wrapper):
+                    return self._task_wrapper(task, *args, **kwargs)
+
+                return task(*args, **kwargs)
 
             f = Future()
-            w = _PriorityWorkItem(priority, f, fn, args, kwargs)
+            w = _PriorityWorkItem(priority, f, wrapped_task, args, kwargs)
 
             # 将任务和计数器一起放入队列，确保同优先级任务按提交顺序执行
             self._queue.put((priority, self._task_counter, w))
@@ -272,18 +290,19 @@ class PriorityThreadPoolExecutor(Executor):
     def _worker(self):
         """工作线程的主循环"""
         try:
-            # 调用初始化函数（如果提供了）
-            if self._initializer is not None:
+            # 调用初始化函数
+            print(5666, self._initializer)
+            if self._initializer:
                 try:
                     self._initializer(*self._initargs)
                 except BaseException:
-                    LOGGER.critical('Exception in initializer:', exc_info=True)
+                    LOGGER.critical('initializer 中出现异常：', exc_info=True)
                     with self._shutdown_lock:
                         self._broken = (
-                            'A thread initializer failed, the thread pool is not usable anymore'
+                            'initializer 执行异常，线程池不再可用'
                         )
                     # 唤醒其他等待中的工作线程
-                    self._queue.put((-1, -1, _SHUTDOWN_SENTINEL))
+                    self._queue.put((-1, -1, _ShutdownSentinel()))
                     return
 
             while True:
@@ -300,17 +319,20 @@ class PriorityThreadPoolExecutor(Executor):
                     work_item = self._queue.get(block=True)
 
                 # 如果收到哨兵对象，说明线程池关闭或初始化失败
-                if isinstance(work_item, tuple):
-                    priority, counter, actual_item = work_item
-                    if actual_item is _SHUTDOWN_SENTINEL:
-                        # 把哨兵对象放回去，以便其他线程也能收到关闭信号
-                        self._queue.put(work_item)
-                        return
-                    work_item = actual_item
-                elif work_item is _SHUTDOWN_SENTINEL:
+                if isinstance(work_item, _ShutdownSentinel):
                     # 把哨兵对象放回去，以便其他线程也能收到关闭信号
                     self._queue.put((-1, -1, work_item))
                     return
+
+                if isinstance(work_item, tuple):
+                    priority, counter, actual_item = work_item
+
+                    if isinstance(actual_item, _ShutdownSentinel):
+                        # 把哨兵对象放回去，以便其他线程也能收到关闭信号
+                        self._queue.put(work_item)
+                        return
+
+                    work_item = actual_item
 
                 try:
                     work_item.run()
@@ -341,17 +363,19 @@ class PriorityThreadPoolExecutor(Executor):
                         item = self._queue.get_nowait()
                     except Empty:
                         break
+
                     if item is not None:
                         if isinstance(item, tuple):
                             _, _, work_item = item
-                            if work_item is not _SHUTDOWN_SENTINEL:
+
+                            if not isinstance(work_item, _ShutdownSentinel):
                                 work_item.future.cancel()
-                        elif item is not _SHUTDOWN_SENTINEL:
+                        elif not isinstance(item, _ShutdownSentinel):
                             work_item = item
                             work_item.future.cancel()
 
             # 发送哨兵信号告知所有工作线程关闭
-            self._queue.put((-1, -1, _SHUTDOWN_SENTINEL))
+            self._queue.put((-1, -1, _ShutdownSentinel()))
 
         if wait:
             for t in self._threads:

@@ -133,18 +133,6 @@ class TestObjectUtil:
         assert 'include_this' in result
         assert 'exclude_this' not in result
 
-    def test_pub_class_catch_decorator(self):
-        """测试类方法异常捕获装饰器"""
-        # 注意：pub_class_catch有个bug，不会传递logger参数
-        # 这里我们只测试它能成功装饰类
-        @object_util.pub_class_catch
-        class TestClass:
-            def method_no_error(self):
-                return 'success'
-
-        obj = TestClass()
-        assert obj.method_no_error() == 'success'
-
 
 class TestPathUtil:
     """路径工具测试"""

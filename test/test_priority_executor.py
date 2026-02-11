@@ -80,7 +80,7 @@ class TestPriorityThreadPoolExecutor:
         with PriorityThreadPoolExecutor(
             max_workers=2,
             initializer=init_worker,
-            initargs=(1,)
+            initargs=(1,),
         ) as executor:
             # 提交任务触发线程创建
             f1 = executor.submit(lambda: 1)
